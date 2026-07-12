@@ -1,18 +1,29 @@
-# tinyclaude
+# tinyclaude 🛡️
+[![Mentioned in Awesome Claude Code](https://awesome.re/mentioned-badge.svg)](https://github.com/hesreallyhim/awesome-claude-code)
 
 A load-balancing proxy for the Claude API — distributes requests across multiple accounts and providers to avoid rate limits, with request compression, prompt-cache keepalive, and full request-level analytics.
 
 ## Usage
 
 ```bash
-# Install and start (Server + Dashboard on :8080)
+# via bun (recommended)
 bun install -g tinyclaude
 tinyclaude
 
-# Add an account
-tinyclaude --add-account myaccount --mode claude-oauth --priority 0
+# via npm (Linux x86_64)
+npm install -g tinyclaude
+tinyclaude
 
-# Point Claude Code at the proxy
+# no install — npx/bunx
+npx tinyclaude@latest
+```
+
+Pre-compiled binaries for all platforms are on the [Releases page](https://github.com/ALange/TinyClaude/releases/latest); building from source is covered in [Getting Started](docs/index.md).
+
+Add an account and point Claude Code at the proxy:
+
+```bash
+tinyclaude --add-account myaccount --mode claude-oauth --priority 0
 export ANTHROPIC_BASE_URL=http://localhost:8080
 claude
 ```
