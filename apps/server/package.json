@@ -1,0 +1,26 @@
+{
+	"name": "@tinyclaude/server",
+	"version": "0.1.0",
+	"type": "module",
+	"main": "./src/server.ts",
+	"scripts": {
+		"dev": "bun run --hot src/server.ts",
+		"start": "bun run src/server.ts",
+		"build": "bun build src/server.ts --compile --outfile dist/tinyclaude-server",
+		"typecheck": "bunx tsc --noEmit"
+	},
+	"dependencies": {
+		"@tinyclaude/core": "workspace:*",
+		"@tinyclaude/core-di": "workspace:*",
+		"@tinyclaude/database": "workspace:*",
+		"@tinyclaude/config": "workspace:*",
+		"@tinyclaude/logger": "workspace:*",
+		"@tinyclaude/load-balancer": "workspace:*",
+		"@tinyclaude/proxy": "workspace:*",
+		"@tinyclaude/dashboard-web": "workspace:*",
+		"@tinyclaude/http-api": "workspace:*",
+		"@tinyclaude/security": "workspace:*",
+		"@tinyclaude/types": "workspace:*",
+		"@tinyclaude/openai-responses-adapter": "workspace:*"
+	}
+}
