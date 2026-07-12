@@ -19,7 +19,9 @@ jobs:
 
       - run: bun install
 
-      - run: bun run apps/cli/build-multi-arch.ts
+      - name: Build multi-arch binaries
+        working-directory: apps/cli
+        run: bun run build-multi-arch.ts
 
       - name: Publish to npm
         working-directory: apps/cli
