@@ -183,7 +183,7 @@
 
 	/* Card hover effects */
 	.card-hover {
-		@apply transition-all duration-200 hover:shadow-lg hover:scale-[1.02];
+		@apply transition-colors duration-200 hover:border-foreground/40;
 	}
 
 	/* Success/Error/Warning colors */
