@@ -83,9 +83,9 @@ export function StatsTab() {
 												{account.requestCount} requests
 											</span>
 										</div>
-										<div className="w-full bg-secondary rounded-full h-2">
+										<div className="w-full bg-secondary h-2">
 											<div
-												className="bg-primary h-2 rounded-full transition-all"
+												className="bg-primary h-2 transition-all"
 												style={{ width: `${account.successRate}%` }}
 											/>
 										</div>

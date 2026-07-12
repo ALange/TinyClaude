@@ -122,7 +122,7 @@ export function ModelPerformanceComparison({
 						</defs>
 						<CartesianGrid
 							strokeDasharray={CHART_PROPS.strokeDasharray}
-							stroke="rgba(255,255,255,0.1)"
+							className={CHART_PROPS.gridClassName}
 						/>
 						<XAxis
 							dataKey="model"
@@ -131,7 +131,6 @@ export function ModelPerformanceComparison({
 							height={80}
 							interval={0}
 							fontSize={12}
-							stroke="rgba(255,255,255,0.5)"
 						/>
 						<YAxis
 							yAxisId="speed"
@@ -158,12 +157,7 @@ export function ModelPerformanceComparison({
 							}}
 						/>
 						<Tooltip
-							contentStyle={{
-								backgroundColor: "rgba(0,0,0,0.8)",
-								border: "1px solid rgba(255,255,255,0.2)",
-								borderRadius: "8px",
-								backdropFilter: "blur(8px)",
-							}}
+							contentStyle={getTooltipStyles("dark")}
 							// biome-ignore lint/suspicious/noExplicitAny: recharts v3.8 widened Formatter to include undefined
 							formatter={
 								((value: number, name: string) => {
@@ -332,7 +326,7 @@ export function ModelPerformanceComparison({
 					</defs>
 					<CartesianGrid
 						strokeDasharray={CHART_PROPS.strokeDasharray}
-						stroke="rgba(255,255,255,0.1)"
+						className={CHART_PROPS.gridClassName}
 					/>
 					<XAxis
 						dataKey="model"
@@ -352,12 +346,7 @@ export function ModelPerformanceComparison({
 						}}
 					/>
 					<Tooltip
-						contentStyle={{
-							backgroundColor: "rgba(0,0,0,0.8)",
-							border: "1px solid rgba(255,255,255,0.2)",
-							borderRadius: "8px",
-							backdropFilter: "blur(8px)",
-						}}
+						contentStyle={getTooltipStyles("dark")}
 						content={({ active, payload }) => {
 							if (!active || !payload?.[0]) return null;
 							const data = payload[0].payload;

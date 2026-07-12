@@ -36,12 +36,7 @@ export function ModelPerformanceChart({
 					return [formatPercentage(Number(value)), "Error Rate"];
 				return [`${value}`, name || ""];
 			}}
-			tooltipStyle={{
-				backgroundColor: COLORS.success,
-				border: `1px solid ${COLORS.success}`,
-				borderRadius: "var(--radius)",
-				color: "#fff",
-			}}
+			tooltipStyle="success"
 			renderLabel={(entry) => entry.model}
 		/>
 	);

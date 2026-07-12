@@ -370,7 +370,7 @@ export function RequestsTab() {
 							<Filter className="h-4 w-4 mr-2" />
 							Filters
 							{hasActiveFilters && !showFilters && (
-								<span className="absolute -top-1 -right-1 h-2 w-2 bg-primary rounded-full animate-pulse" />
+								<span className="absolute -top-1 -right-1 h-2 w-2 bg-primary animate-pulse" />
 							)}
 						</Button>
 						<Button onClick={() => loadRequests()} variant="ghost" size="icon">
@@ -865,10 +865,7 @@ export function RequestsTab() {
 												</Badge>
 											)}
 											{summary?.comboName && (
-												<Badge
-													variant="outline"
-													className="text-xs border-purple-500 text-purple-500"
-												>
+												<Badge variant="outline" className="text-xs">
 													Combo: {summary.comboName}
 												</Badge>
 											)}
@@ -889,18 +886,12 @@ export function RequestsTab() {
 												</Badge>
 											)}
 											{summary?.billingType === "overage" && (
-												<Badge
-													variant="outline"
-													className="text-xs border-orange-500 text-orange-500"
-												>
+												<Badge variant="outline" className="text-xs">
 													Overage
 												</Badge>
 											)}
 											{summary?.billingType === "plan" && (
-												<Badge
-													variant="outline"
-													className="text-xs border-teal-500 text-teal-500"
-												>
+												<Badge variant="outline" className="text-xs">
 													Plan
 												</Badge>
 											)}
@@ -921,10 +912,7 @@ export function RequestsTab() {
 												</Badge>
 											)}
 											{(isZaiPeak || isAnthropicPeak) && (
-												<Badge
-													variant="outline"
-													className="text-xs border-orange-500 text-orange-500"
-												>
+												<Badge variant="outline" className="text-xs">
 													Peak
 												</Badge>
 											)}

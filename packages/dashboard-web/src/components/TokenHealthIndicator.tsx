@@ -154,7 +154,7 @@ export function TokenHealthIndicator({
 		// For global indicator, show minimal placeholder
 		return (
 			<div
-				className={`flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-medium ${className}`}
+				className={`flex items-center gap-2 px-3 py-1 border text-xs font-medium ${className}`}
 			>
 				<CheckCircle className="h-4 w-4 text-gray-400" />
 				<span className="text-gray-500">No OAuth accounts</span>
@@ -165,7 +165,7 @@ export function TokenHealthIndicator({
 	if (loading) {
 		return (
 			<div
-				className={`flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-medium ${className}`}
+				className={`flex items-center gap-2 px-3 py-1 border text-xs font-medium ${className}`}
 			>
 				<RefreshCw className="h-4 w-4 text-gray-400 animate-spin" />
 				<span className="text-gray-600">Loading...</span>
@@ -179,7 +179,7 @@ export function TokenHealthIndicator({
 
 	return (
 		<div
-			className={`flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-medium ${getStatusColor(tokenHealth.status)} ${className}`}
+			className={`flex items-center gap-2 px-3 py-1 border text-xs font-medium ${getStatusColor(tokenHealth.status)} ${className}`}
 		>
 			{getStatusIcon(tokenHealth.status)}
 			<span>{getStatusText(tokenHealth.status)}</span>

@@ -176,7 +176,7 @@ export function ChartsSection({
 								>
 									<div className="flex items-center gap-2">
 										<div
-											className="h-3 w-3 rounded-full"
+											className="h-3 w-3"
 											style={{
 												backgroundColor:
 													CHART_COLORS[index % CHART_COLORS.length],
@@ -217,7 +217,7 @@ export function ChartsSection({
 										<div className="flex items-center justify-between text-sm">
 											<div className="flex items-center gap-2">
 												<div
-													className="h-3 w-3 rounded-full"
+													className="h-3 w-3"
 													style={{
 														backgroundColor:
 															CHART_COLORS[index % CHART_COLORS.length],
@@ -275,7 +275,7 @@ export function ChartsSection({
 								>
 									<div className="flex items-center gap-2">
 										<div
-											className="h-3 w-3 rounded-full"
+											className="h-3 w-3"
 											style={{
 												backgroundColor:
 													CHART_COLORS[index % CHART_COLORS.length],

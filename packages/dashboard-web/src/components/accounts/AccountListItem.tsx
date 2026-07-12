@@ -128,11 +128,11 @@ export function AccountListItem({
 						<div className="flex items-center gap-2">
 							<p className="font-medium">{account.name}</p>
 							{isPrimary && (
-								<span className="px-2 py-0.5 text-xs font-medium bg-primary text-primary-foreground rounded-full">
+								<span className="px-2 py-0.5 text-xs font-medium bg-primary text-primary-foreground">
 									Primary
 								</span>
 							)}
-							<span className="px-2 py-0.5 text-xs font-medium bg-secondary text-secondary-foreground rounded-full">
+							<span className="px-2 py-0.5 text-xs font-medium bg-secondary text-secondary-foreground">
 								Priority: {account.priority}
 							</span>
 							<OAuthTokenStatusWithBoundary

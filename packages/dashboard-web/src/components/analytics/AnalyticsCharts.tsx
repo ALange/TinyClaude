@@ -12,8 +12,10 @@ import {
 	YAxis,
 } from "recharts";
 import {
+	CHART_COLORS,
 	CHART_HEIGHTS,
 	CHART_PROPS,
+	CHART_TOOLTIP_STYLE,
 	COLORS,
 	type TimeRange,
 } from "../../constants";
@@ -284,12 +286,12 @@ export function MainMetricsChart({
 											>
 												<stop
 													offset="0%"
-													stopColor="#14b8a6"
+													stopColor={CHART_COLORS[0]}
 													stopOpacity={0.9}
 												/>
 												<stop
 													offset="100%"
-													stopColor="#14b8a6"
+													stopColor={CHART_COLORS[0]}
 													stopOpacity={0.1}
 												/>
 											</linearGradient>
@@ -302,12 +304,12 @@ export function MainMetricsChart({
 											>
 												<stop
 													offset="0%"
-													stopColor="#f97316"
+													stopColor={CHART_COLORS[2]}
 													stopOpacity={0.9}
 												/>
 												<stop
 													offset="100%"
-													stopColor="#f97316"
+													stopColor={CHART_COLORS[2]}
 													stopOpacity={0.1}
 												/>
 											</linearGradient>
@@ -350,7 +352,7 @@ export function MainMetricsChart({
 											type="monotone"
 											dataKey="planCost"
 											name="Plan Cost"
-											stroke="#14b8a6"
+											stroke={CHART_COLORS[0]}
 											strokeWidth={strokeW}
 											fillOpacity={1}
 											fill="url(#colorPlanCost)"
@@ -361,7 +363,7 @@ export function MainMetricsChart({
 											type="monotone"
 											dataKey="apiCost"
 											name="API/Overage Cost"
-											stroke="#f97316"
+											stroke={CHART_COLORS[2]}
 											strokeWidth={strokeW}
 											fillOpacity={1}
 											fill="url(#colorApiCost)"
@@ -608,9 +610,9 @@ export function TokenUsageBreakdown({
 									<Badge variant="outline">{item.percentage}%</Badge>
 								</div>
 							</div>
-							<div className="w-full bg-muted rounded-full h-2">
+							<div className="w-full bg-muted h-2">
 								<div
-									className="h-2 rounded-full transition-all"
+									className="h-2 transition-all"
 									style={{
 										width: `${item.percentage}%`,
 										backgroundColor:
@@ -756,13 +758,9 @@ export function CumulativeGrowthChart({ data }: CumulativeGrowthChartProps) {
 						</defs>
 						<CartesianGrid
 							strokeDasharray={CHART_PROPS.strokeDasharray}
-							stroke="rgba(255,255,255,0.1)"
+							className={CHART_PROPS.gridClassName}
 						/>
-						<XAxis
-							dataKey="time"
-							className="text-xs"
-							stroke="rgba(255,255,255,0.5)"
-						/>
+						<XAxis dataKey="time" className="text-xs" />
 						<YAxis
 							yAxisId="tokens"
 							className="text-xs"
@@ -778,12 +776,7 @@ export function CumulativeGrowthChart({ data }: CumulativeGrowthChartProps) {
 						/>
 						<Tooltip
 							labelClassName="font-bold"
-							contentStyle={{
-								backgroundColor: "rgba(0,0,0,0.8)",
-								border: "1px solid rgba(255,255,255,0.2)",
-								borderRadius: "8px",
-								backdropFilter: "blur(8px)",
-							}}
+							contentStyle={CHART_TOOLTIP_STYLE.dark}
 							// biome-ignore lint/suspicious/noExplicitAny: recharts v3.8 widened Formatter to include undefined
 							formatter={
 								((value: number | string, name: string) => {
@@ -894,7 +887,7 @@ export function CumulativeTokenComposition({
 						{tokenBreakdown.map((item, index) => (
 							<div key={item.type} className="flex items-center gap-2">
 								<div
-									className="w-3 h-3 rounded-full"
+									className="w-3 h-3"
 									style={{
 										background:
 											index === 0
