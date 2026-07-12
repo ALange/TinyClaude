@@ -1,14 +1,8 @@
 # tinyclaude 🛡️
-[![Mentioned in Awesome Claude Code](https://awesome.re/mentioned-badge.svg)](https://github.com/hesreallyhim/awesome-claude-code)
 
-**Track Every Request. Go Low-Level. Never Hit Rate Limits Again.**
+**Track Every Request. Go Low-Level. Compress. Never Hit Rate Limits Again.**
 
-The ultimate Claude API proxy with intelligent load balancing across multiple accounts. Full visibility into every request, response, and rate limit.
-
-https://github.com/user-attachments/assets/c859872f-ca5e-4f8b-b6a0-7cc7461fe62a
-
-
-![tinyclaude Dashboard](apps/lander/src/screenshot-dashboard.png)
+The ultimate Claude API proxy with intelligent load balancing, cahing and compression across multiple accounts. Full visibility into every request, response, and rate limit.
 
 ## Why tinyclaude?
 
@@ -29,7 +23,8 @@ https://github.com/user-attachments/assets/c859872f-ca5e-4f8b-b6a0-7cc7461fe62a
 
 ### Why this fork?
 
-This project builds upon the excellent foundation of [snipeship/ccflare](https://github.com/snipeship/ccflare) with significant enhancements:
+This project builds upon the excellent foundation of [snipeship/ccflare](https://github.com/snipeship/ccflare) and [tombii/better-ccflare](https://github.com/tombii/better-ccflare) with significant enhancements:
+
 
 **🎯 Core Improvements (v3.0.0):**
 - **Enhanced Security** - Critical fixes for authentication bypass, command injection, and PKCE implementation
@@ -37,8 +32,8 @@ This project builds upon the excellent foundation of [snipeship/ccflare](https:/
 - **Extended Provider Support** - AWS Bedrock, NanoGPT (with dynamic pricing), Minimax, OpenRouter, Kilo, Codex (OpenAI OAuth), xAI/Grok, Anthropic-compatible, and OpenAI-compatible providers
 - **Simplified Load Balancing** - Removed tier system for O(1) priority-based selection
 - **Real-time Analytics Dashboard** - Beautiful web UI with fixed request history (no disappearing requests)
-- **Package Distribution** - Available via npm and bun for easy installation
-
+- **Request compression** - State of the art compression of your requests to save on token usage!
+- 
 **🛠️ Developer Experience:**
 - **Powerful CLI** - Complete command-line interface for account management and configuration
 - **REST API** - Complete API for automation and integration
@@ -46,32 +41,8 @@ This project builds upon the excellent foundation of [snipeship/ccflare](https:/
 - **Comprehensive Logging** - Request/response tracking with searchable history
 - **Database Integration** - SQLite (default) or PostgreSQL for persistent storage and analytics, supporting Kubernetes multi-pod deployments
 
-**📦 Distribution & Updates:**
-- **npm/bun Registry** - Install with `npm install -g tinyclaude` or `bun install -g tinyclaude`
-- **npx/bunx Support** - Run without installation: `npx tinyclaude` or `bunx tinyclaude`
-- **Smart Update Detection** - Web UI detects package manager and shows appropriate update commands
-- **Version Management** - Semantic versioning with automatic update notifications
-
-**🏢 Production Ready:**
-- **Enterprise Features** - Custom API endpoints, session management, advanced analytics
-- **Performance Optimized** - <10ms overhead with request deduplication and caching
-- **Reliability** - Automatic error recovery, circuit breakers, and health monitoring
-- **Scalability** - Built for high-throughput production environments
-- **PostgreSQL Support** - Set `DATABASE_URL=postgresql://...` to use PostgreSQL for Kubernetes multi-pod deployments where SQLite file-sharing is not feasible
-
 ## Quick Start
 
-### Install via npm (Linux x86_64)
-
-```bash
-npm install -g tinyclaude
-
-# Start tinyclaude (Server + Dashboard)
-tinyclaude
-```
-Continue to [Configure Claude SDK](https://github.com/ALange/TinyClaude#configure-claude-sdk).
-
-**⚠️ Windows npm Installation Issue**: If you installed via npm on Windows and encounter a path error like `"C:\\Program Files\\nodejs\\\\node_modules\\tinyclaude\\dist\\tinyclaude" is either misspelled or could not be found`, this is a known [npm bug on Windows](https://github.com/npm/cli/issues/969) affecting how npm generates wrapper scripts. See [Windows Troubleshooting](#windows-troubleshooting) for workarounds.
 ### Install via bun
 
 ```bash
@@ -81,79 +52,6 @@ bun install -g tinyclaude
 tinyclaude
 ```
 Continue to [Configure Claude SDK](https://github.com/ALange/TinyClaude#configure-claude-sdk).
-### Install Pre-compiled Binary (All Architectures)
-
-Download the appropriate binary for your platform from [GitHub Releases](https://github.com/ALange/TinyClaude/releases/latest):
-
-#### Linux x86_64
-```bash
-wget https://github.com/ALange/TinyClaude/releases/latest/download/tinyclaude-linux-amd64
-chmod +x tinyclaude-linux-amd64
-./tinyclaude-linux-amd64
-```
-Continue to [Configure Claude SDK](https://github.com/ALange/TinyClaude#configure-claude-sdk).
-#### Linux ARM64 (Raspberry Pi 3/4/5, Oracle Cloud ARM, AWS Graviton)
-```bash
-wget https://github.com/ALange/TinyClaude/releases/latest/download/tinyclaude-linux-arm64
-chmod +x tinyclaude-linux-arm64
-./tinyclaude-linux-arm64
-```
-Continue to [Configure Claude SDK](https://github.com/ALange/TinyClaude#configure-claude-sdk).
-#### macOS Intel
-```bash
-curl -L -o tinyclaude-macos-x86_64 https://github.com/ALange/TinyClaude/releases/latest/download/tinyclaude-macos-x86_64
-chmod +x tinyclaude-macos-x86_64
-
-# Remove quarantine attribute (required on macOS to run unsigned binaries)
-xattr -d com.apple.quarantine tinyclaude-macos-x86_64
-
-./tinyclaude-macos-x86_64
-```
-Continue to [Configure Claude SDK](https://github.com/ALange/TinyClaude#configure-claude-sdk).
-#### macOS Apple Silicon
-```bash
-curl -L -o tinyclaude-macos-arm64 https://github.com/ALange/TinyClaude/releases/latest/download/tinyclaude-macos-arm64
-chmod +x tinyclaude-macos-arm64
-
-# Remove quarantine attribute (required on macOS to run unsigned binaries)
-xattr -d com.apple.quarantine tinyclaude-macos-arm64
-
-./tinyclaude-macos-arm64
-```
-Continue to [Configure Claude SDK](https://github.com/ALange/TinyClaude#configure-claude-sdk).
-
-**macOS Gatekeeper Notice:** Our macOS binaries are not notarized by Apple as this requires a paid Apple Developer subscription. After downloading, you must remove the quarantine attribute using the `xattr` command shown above to run the binary. If you prefer not to run unsigned binaries, you can [install from source](#install-from-source) instead.
-
-#### Windows x86_64
-Download [`tinyclaude-windows-x64.exe`](https://github.com/ALange/TinyClaude/releases/latest/download/tinyclaude-windows-x64.exe) and run it.
-Continue to [Configure Claude SDK](https://github.com/ALange/TinyClaude#configure-claude-sdk).
-### Run without installation (npx/bunx)
-
-```bash
-# Run with npx (downloads and executes latest version)
-npx tinyclaude@latest
-
-# Run with bunx (faster for bun users)
-bunx tinyclaude@latest
-```
-Continue to [Configure Claude SDK](https://github.com/ALange/TinyClaude#configure-claude-sdk).
-### Install from source
-
-```bash
-# Clone and install
-git clone https://github.com/ALange/TinyClaude
-cd tinyclaude
-bun install
-
-# Build dashboard (required before first run)
-bun run build
-
-# Start tinyclaude (TUI + Server)
-bun run tinyclaude
-```
-Continue to [Configure Claude SDK](https://github.com/ALange/TinyClaude#configure-claude-sdk).
-
-**Note**: You must run `bun run build` at least once to build the dashboard files before starting the server. This can also be done by running `bun run tinyclaude` which includes the build step.
 
 ### Environment Variables
 
