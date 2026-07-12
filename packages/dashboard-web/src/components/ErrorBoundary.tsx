@@ -126,7 +126,7 @@ function DefaultErrorFallback({ error, reset }: DefaultErrorFallbackProps) {
  */
 export function TokenStatusErrorFallback() {
 	return (
-		<span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 rounded-full">
+		<span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
 			Status unavailable
 		</span>
 	);

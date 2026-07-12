@@ -18,7 +18,7 @@ import {
 	TrendingUp,
 } from "lucide-react";
 import React, { useMemo, useState } from "react";
-import { COLORS, type TimeRange } from "../../constants";
+import { CHART_COLORS, COLORS, type TimeRange } from "../../constants";
 import { BaseLineChart, BasePieChart } from "../charts";
 import { Badge } from "../ui/badge";
 import {
@@ -569,7 +569,7 @@ export const ContextCompositionView = React.memo(
 									{
 										dataKey: "outputTokens",
 										name: "Output tokens",
-										stroke: COLORS.blue,
+										stroke: CHART_COLORS[1],
 									},
 								]}
 								yAxisTickFormatter={(value) => formatTokens(Number(value))}

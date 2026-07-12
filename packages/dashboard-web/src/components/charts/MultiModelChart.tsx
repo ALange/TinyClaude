@@ -15,12 +15,7 @@ import {
 	XAxis,
 	YAxis,
 } from "recharts";
-import {
-	CHART_COLORS,
-	CHART_HEIGHTS,
-	CHART_PROPS,
-	COLORS,
-} from "../../constants";
+import { CHART_COLORS, CHART_HEIGHTS, CHART_PROPS } from "../../constants";
 import {
 	formatCompactCurrency,
 	formatCompactNumber,
@@ -47,15 +42,15 @@ interface MultiModelChartProps {
 	viewMode?: "normal" | "cumulative";
 }
 
-// Model-based color palette
+// Model-based color palette (grayscale — decorative per-model identity, not status)
 const MODEL_COLORS: Record<string, string> = {
-	"claude-3.5-sonnet": COLORS.purple,
-	"claude-3.5-haiku": COLORS.success,
-	"claude-3-opus": COLORS.blue,
-	"claude-opus-4": COLORS.pink,
-	"claude-opus-4.1": COLORS.indigo,
-	"claude-sonnet-4": COLORS.cyan,
-	"claude-sonnet-4.5": COLORS.purple,
+	"claude-3.5-sonnet": CHART_COLORS[2],
+	"claude-3.5-haiku": CHART_COLORS[0],
+	"claude-3-opus": CHART_COLORS[1],
+	"claude-opus-4": CHART_COLORS[3],
+	"claude-opus-4.1": CHART_COLORS[4],
+	"claude-sonnet-4": CHART_COLORS[0],
+	"claude-sonnet-4.5": CHART_COLORS[2],
 };
 
 function getModelColor(model: string, index: number): string {
@@ -186,13 +181,6 @@ export function MultiModelChart({
 							/>
 						</linearGradient>
 					))}
-					<filter id="glow">
-						<feGaussianBlur stdDeviation="2" result="coloredBlur" />
-						<feMerge>
-							<feMergeNode in="coloredBlur" />
-							<feMergeNode in="SourceGraphic" />
-						</feMerge>
-					</filter>
 				</defs>
 				<CartesianGrid
 					strokeDasharray={CHART_PROPS.strokeDasharray}
@@ -242,7 +230,6 @@ export function MultiModelChart({
 						strokeWidth={viewMode === "cumulative" ? 3 : 2}
 						dot={false}
 						activeDot={{ r: 6 }}
-						filter={viewMode === "cumulative" ? "url(#glow)" : undefined}
 						connectNulls={true}
 					/>
 				))}

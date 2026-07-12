@@ -26,7 +26,7 @@ interface MessageProps {
 const ROLE_STYLES: Record<Role, { bg: string; Icon: LucideIcon }> = {
 	user: { bg: "bg-primary text-primary-foreground", Icon: User },
 	assistant: { bg: "bg-muted", Icon: Bot },
-	system: { bg: "bg-orange-100 dark:bg-orange-900", Icon: Bot },
+	system: { bg: "bg-secondary text-secondary-foreground", Icon: Bot },
 };
 
 function MessageComponent({
@@ -58,7 +58,7 @@ function MessageComponent({
 			className={`flex gap-3 w-full ${isRightAligned ? "flex-row-reverse" : "flex-row"}`}
 		>
 			<div
-				className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${roleStyle.bg}`}
+				className={`flex-shrink-0 w-8 h-8 flex items-center justify-center border border-border ${roleStyle.bg}`}
 			>
 				<Icon className="w-4 h-4" />
 			</div>

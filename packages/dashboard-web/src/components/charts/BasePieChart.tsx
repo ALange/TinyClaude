@@ -61,7 +61,7 @@ export function BasePieChart({
 	legendLayout = "horizontal",
 	legendAlign = "center",
 	legendVerticalAlign = "bottom",
-	renderLabel = false,
+	renderLabel = true,
 	className = "",
 	error = null,
 	emptyState,
@@ -70,6 +70,25 @@ export function BasePieChart({
 	const chartHeight = getChartHeight(height);
 	const isEmpty = !data || data.length === 0;
 	const tooltipStyles = getTooltipStyles(tooltipStyle);
+	// Order slices largest-to-smallest so the grayscale ramp reads consistently
+	// (darkest/lightest steps map to the same rank every render) and adjacent
+	// slices stay visually distinguishable.
+	const sortedData = data
+		? [...data].sort((a, b) => Number(b[dataKey]) - Number(a[dataKey]))
+		: [];
+	// Reverse the ramp for slice assignment: the largest slice (index 0, sorted
+	// above) gets the darkest step instead of the near-white lightest one, so it
+	// never becomes low-contrast/near-invisible against a light background.
+	const sliceColors = [...colors].reverse();
+	// Bare recharts labels only show the raw value; render "name: NN%" so a
+	// slice is identifiable without cross-referencing an (often hidden) legend.
+	const pieLabel = renderLabel
+		? // biome-ignore lint/suspicious/noExplicitAny: recharts label render props aren't fully typed for custom formatters
+			(props: any) => {
+				const percent = typeof props.percent === "number" ? props.percent : 0;
+				return `${props.name}: ${(percent * 100).toFixed(0)}%`;
+			}
+		: false;
 
 	return (
 		<ChartContainer
@@ -83,7 +102,7 @@ export function BasePieChart({
 			<ResponsiveContainer width="100%" height={chartHeight}>
 				<PieChart>
 					<Pie
-						data={data}
+						data={sortedData}
 						cx={cx}
 						cy={cy}
 						innerRadius={innerRadius}
@@ -92,13 +111,13 @@ export function BasePieChart({
 						dataKey={dataKey}
 						nameKey={nameKey}
 						animationDuration={animationDuration}
-						label={renderLabel}
+						label={pieLabel}
 						onClick={onPieClick}
 					>
-						{data.map((entry, index) => (
+						{sortedData.map((entry, index) => (
 							<Cell
 								key={`cell-${entry[nameKey]}`}
-								fill={colors[index % colors.length]}
+								fill={sliceColors[index % sliceColors.length]}
 							/>
 						))}
 					</Pie>

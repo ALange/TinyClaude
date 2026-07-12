@@ -95,6 +95,7 @@ export function BaseLineChart({
 					<CartesianGrid
 						strokeDasharray={CHART_PROPS.strokeDasharray}
 						className={CHART_PROPS.gridClassName}
+						vertical={false}
 					/>
 					<XAxis
 						dataKey={xAxisKey}

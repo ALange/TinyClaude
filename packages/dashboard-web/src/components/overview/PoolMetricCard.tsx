@@ -321,8 +321,12 @@ export function PoolMetricCard({
 					{triggerNode}
 				</div>
 				<div className="space-y-1">
-					<p className="text-sm text-muted-foreground">{title}</p>
-					<p className={cn("text-2xl font-bold", colorClass)}>{headline}</p>
+					<p className="text-xs uppercase tracking-widest text-muted-foreground">
+						{title}
+					</p>
+					<p className={cn("text-2xl font-bold tabular-nums", colorClass)}>
+						{headline}
+					</p>
 					<p className="text-xs text-muted-foreground truncate">
 						capacity used
 					</p>

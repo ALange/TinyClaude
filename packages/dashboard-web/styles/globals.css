@@ -1,54 +1,78 @@
 @import "tailwindcss";
 
+@font-face {
+	font-family: "JetBrains Mono";
+	src: url("./fonts/JetBrainsMono[wght].woff2") format("woff2-variations");
+	font-weight: 100 800;
+	font-style: normal;
+	font-display: swap;
+}
+
+@theme {
+	--font-sans:
+		"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas,
+		"Liberation Mono", monospace;
+	--font-mono:
+		"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas,
+		"Liberation Mono", monospace;
+}
+
 @plugin "tailwindcss-animate";
 
 @custom-variant dark (&:is(.dark *));
 
 :root {
+	--gray-950: hsl(0 0% 4%);
+	--gray-900: hsl(0 0% 7%);
+	--gray-800: hsl(0 0% 11%);
+	--gray-700: hsl(0 0% 20%);
+	--gray-500: hsl(0 0% 45%);
+	--gray-200: hsl(0 0% 85%);
+	--gray-100: hsl(0 0% 93%);
+	--gray-50: hsl(0 0% 98%);
+
 	--background: hsl(0 0% 100%);
-	--foreground: hsl(240 10% 3.9%);
-	--card: hsl(0 0% 100%);
-	--card-foreground: hsl(240 10% 3.9%);
-	--popover: hsl(0 0% 100%);
-	--popover-foreground: hsl(240 10% 3.9%);
-	--primary: hsl(24 89% 56%); /* tinyclaude Orange #F38020 */
+	--foreground: var(--gray-950);
+	--card: var(--gray-50);
+	--card-foreground: var(--gray-950);
+	--popover: var(--gray-50);
+	--popover-foreground: var(--gray-950);
+	--primary: var(--gray-950);
 	--primary-foreground: hsl(0 0% 100%);
-	--secondary: hsl(240 4.8% 95.9%);
-	--secondary-foreground: hsl(240 5.9% 10%);
-	--muted: hsl(240 4.8% 95.9%);
-	--muted-foreground: hsl(240 3.8% 46.1%);
-	--accent: hsl(24 89% 56%); /* tinyclaude Orange */
+	--secondary: var(--gray-100);
+	--secondary-foreground: var(--gray-950);
+	--muted: var(--gray-100);
+	--muted-foreground: hsl(0 0% 40%);
+	--accent: var(--gray-950);
 	--accent-foreground: hsl(0 0% 100%);
 	--destructive: hsl(0 84.2% 60.2%);
 	--destructive-foreground: hsl(0 0% 98%);
-	--border: hsl(240 5.9% 90%);
-	--input: hsl(240 5.9% 90%);
-	--ring: hsl(24 89% 56%); /* tinyclaude Orange */
-	--radius: 0.375rem;
-	--cf-orange: #f38020;
+	--border: var(--gray-200);
+	--input: var(--gray-100);
+	--ring: var(--gray-950);
+	--radius: 0;
 }
 
 .dark {
-	--background: hsl(220 13% 8%); /* Dark background like tinyclaude */
-	--foreground: hsl(0 0% 95%);
-	--card: hsl(220 13% 12%);
-	--card-foreground: hsl(0 0% 95%);
-	--popover: hsl(220 13% 12%);
-	--popover-foreground: hsl(0 0% 95%);
-	--primary: hsl(24 89% 56%); /* tinyclaude Orange */
-	--primary-foreground: hsl(0 0% 100%);
-	--secondary: hsl(220 13% 18%);
-	--secondary-foreground: hsl(0 0% 95%);
-	--muted: hsl(220 13% 18%);
-	--muted-foreground: hsl(220 9% 55%);
-	--accent: hsl(24 89% 56%); /* tinyclaude Orange */
-	--accent-foreground: hsl(0 0% 100%);
+	--background: var(--gray-950);
+	--foreground: var(--gray-50);
+	--card: var(--gray-900);
+	--card-foreground: var(--gray-50);
+	--popover: var(--gray-900);
+	--popover-foreground: var(--gray-50);
+	--primary: var(--gray-50);
+	--primary-foreground: var(--gray-950);
+	--secondary: var(--gray-800);
+	--secondary-foreground: var(--gray-50);
+	--muted: var(--gray-800);
+	--muted-foreground: var(--gray-500);
+	--accent: var(--gray-50);
+	--accent-foreground: var(--gray-950);
 	--destructive: hsl(0 84.2% 60.2%);
 	--destructive-foreground: hsl(0 0% 98%);
-	--border: hsl(220 13% 20%);
-	--input: hsl(220 13% 18%);
-	--ring: hsl(24 89% 56%); /* tinyclaude Orange */
-	--cf-orange: #f38020;
+	--border: var(--gray-700);
+	--input: var(--gray-800);
+	--ring: var(--gray-50);
 }
 
 @theme inline {
@@ -74,7 +98,8 @@
 	--radius-sm: calc(var(--radius) - 4px);
 	--radius-md: calc(var(--radius) - 2px);
 	--radius-lg: var(--radius);
-	--radius-xl: calc(var(--radius) + 4px);
+	--radius-xl: var(--radius);
+
 	--animate-accordion-down: accordion-down 0.2s ease-out;
 	--animate-accordion-up: accordion-up 0.2s ease-out;
 
@@ -104,8 +129,9 @@
 	body {
 		@apply bg-background text-foreground antialiased;
 		font-feature-settings:
-			"rlig" 1,
-			"calt" 1;
+			"tnum" 1,
+			"calt" 0,
+			"liga" 0;
 	}
 
 	/* Custom scrollbar */
@@ -143,17 +169,9 @@
 		@apply bg-background/80 backdrop-blur-md;
 	}
 
-	/* Gradient text */
-	.gradient-text {
-		background: linear-gradient(135deg, var(--cf-orange) 0%, #f97316 100%);
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
-		background-clip: text;
-	}
-
 	/* Card hover effects */
 	.card-hover {
-		@apply transition-all duration-200 hover:shadow-lg hover:scale-[1.02];
+		@apply transition-colors duration-200 hover:border-foreground/40;
 	}
 
 	/* Success/Error/Warning colors */

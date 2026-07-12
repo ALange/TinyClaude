@@ -343,7 +343,7 @@ export function App() {
 				<ThemeProvider>
 					<div className="min-h-screen bg-background flex items-center justify-center">
 						<div className="text-center">
-							<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
+							<div className="animate-spin h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
 							<p className="text-muted-foreground">
 								Checking authentication...
 							</p>
@@ -372,9 +372,7 @@ export function App() {
 						<div className="p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto">
 							{/* Page Header */}
 							<div className="mb-8">
-								<h1 className="text-3xl font-bold gradient-text">
-									{currentRoute.title}
-								</h1>
+								<h1 className="text-3xl font-bold">{currentRoute.title}</h1>
 								<p className="text-muted-foreground mt-2">
 									{currentRoute.subtitle}
 								</p>

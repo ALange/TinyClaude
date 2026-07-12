@@ -228,7 +228,8 @@ export const OverviewTab = React.memo(() => {
 				/>
 				<MetricCard
 					title="Avg Response Time"
-					value={`${Math.round(analytics?.totals.avgResponseTime || 0)}ms`}
+					value={Math.round(analytics?.totals.avgResponseTime || 0)}
+					unit="ms"
 					change={
 						trends.deltaResponseTime !== null
 							? trends.deltaResponseTime

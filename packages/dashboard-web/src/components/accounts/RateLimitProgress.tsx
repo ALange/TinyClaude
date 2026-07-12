@@ -390,14 +390,14 @@ export function RateLimitProgress({
 			{provider === "zai" && (
 				<div className="flex items-center gap-2">
 					<span
-						className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full ${
+						className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium ${
 							isZaiPeak
-								? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
+								? "bg-muted text-muted-foreground"
 								: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
 						}`}
 					>
 						<span
-							className={`h-1.5 w-1.5 rounded-full ${isZaiPeak ? "bg-orange-500" : "bg-green-500"}`}
+							className={`h-1.5 w-1.5 ${isZaiPeak ? "bg-foreground" : "bg-green-500"}`}
 						/>
 						{isZaiPeak ? "Peak hours (14:00–18:00 SGT)" : "Off-peak hours"}
 					</span>
@@ -406,14 +406,14 @@ export function RateLimitProgress({
 			{provider === "anthropic" && (
 				<div className="flex items-center gap-2">
 					<span
-						className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full ${
+						className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium ${
 							isAnthropicPeak
-								? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
+								? "bg-muted text-muted-foreground"
 								: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
 						}`}
 					>
 						<span
-							className={`h-1.5 w-1.5 rounded-full ${isAnthropicPeak ? "bg-orange-500" : "bg-green-500"}`}
+							className={`h-1.5 w-1.5 ${isAnthropicPeak ? "bg-foreground" : "bg-green-500"}`}
 						/>
 						{isAnthropicPeak
 							? "Peak hours (5–11am PT, weekdays)"
@@ -584,9 +584,7 @@ export function RateLimitProgress({
 													top: "-3px",
 													height: "14px",
 													zIndex: 10,
-													backgroundColor: "rgba(255,255,255,0.95)",
-													boxShadow:
-														"1px 0 2px rgba(0,0,0,0.5), -1px 0 2px rgba(0,0,0,0.5)",
+													backgroundColor: "var(--foreground)",
 												}}
 											/>
 										)}

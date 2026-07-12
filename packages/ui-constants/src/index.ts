@@ -1,6 +1,6 @@
 // Color palette used across UI components
 export const COLORS = {
-	primary: "#f38020",
+	primary: "#e5e5e5",
 	success: "#10b981",
 	warning: "#f59e0b",
 	error: "#ef4444",
@@ -11,13 +11,13 @@ export const COLORS = {
 	cyan: "#06b6d4",
 } as const;
 
-// Chart color sequence for multi-series charts
+// Chart color sequence for multi-series charts (grayscale ramp, near-white to near-black)
 export const CHART_COLORS = [
 	COLORS.primary,
-	COLORS.blue,
-	COLORS.purple,
-	COLORS.pink,
-	COLORS.success,
+	"#b3b3b3",
+	"#808080",
+	"#4d4d4d",
+	"#262626",
 ] as const;
 
 // Time range options for analytics
@@ -54,15 +54,15 @@ export const CHART_TOOLTIP_STYLE = {
 	dark: {
 		backgroundColor: "rgba(0,0,0,0.8)",
 		border: "1px solid rgba(255,255,255,0.2)",
-		borderRadius: "8px",
+		borderRadius: "0px",
 		backdropFilter: "blur(8px)",
 	},
 } as const;
 
 // Chart common properties
 export const CHART_PROPS = {
-	strokeDasharray: "3 3",
-	gridClassName: "stroke-muted",
+	strokeDasharray: "0",
+	gridClassName: "stroke-border/50",
 } as const;
 
 // API and data refresh intervals (in milliseconds)

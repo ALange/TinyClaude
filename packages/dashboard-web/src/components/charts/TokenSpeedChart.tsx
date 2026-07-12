@@ -1,5 +1,5 @@
 import { formatTokensPerSecond } from "@tinyclaude/ui-common";
-import { COLORS } from "../../constants";
+import { CHART_COLORS } from "../../constants";
 import { formatCompactNumber } from "../../lib/chart-utils";
 import { BaseAreaChart } from "./BaseAreaChart";
 
@@ -30,8 +30,8 @@ export function TokenSpeedChart({
 
 	const gradient = (
 		<linearGradient id="colorSpeed" x1="0" y1="0" x2="0" y2="1">
-			<stop offset="0%" stopColor={COLORS.purple} stopOpacity={0.9} />
-			<stop offset="100%" stopColor={COLORS.purple} stopOpacity={0.1} />
+			<stop offset="0%" stopColor={CHART_COLORS[2]} stopOpacity={0.9} />
+			<stop offset="100%" stopColor={CHART_COLORS[2]} stopOpacity={0.1} />
 		</linearGradient>
 	);
 
@@ -41,7 +41,7 @@ export function TokenSpeedChart({
 			dataKey="avgTokensPerSecond"
 			loading={loading}
 			height={height}
-			color={COLORS.purple}
+			color={CHART_COLORS[2]}
 			gradientId="colorSpeed"
 			customGradient={gradient}
 			strokeWidth={2}

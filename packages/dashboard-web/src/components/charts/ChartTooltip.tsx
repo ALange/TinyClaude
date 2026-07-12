@@ -36,7 +36,7 @@ export function ChartTooltip({
 		labelFormatter && label ? labelFormatter(label) : label;
 
 	return (
-		<div className="p-3 rounded-md shadow-lg" style={tooltipStyle}>
+		<div className="p-3 rounded-md" style={tooltipStyle}>
 			{formattedLabel && <p className="font-medium mb-2">{formattedLabel}</p>}
 			<div className="space-y-1">
 				{payload.map((entry, index) => {
@@ -52,7 +52,7 @@ export function ChartTooltip({
 							className="flex items-center gap-2"
 						>
 							<div
-								className="w-3 h-3 rounded-full"
+								className="w-3 h-3 rounded-none"
 								style={{ backgroundColor: entry.color }}
 							/>
 							<span className="text-sm">

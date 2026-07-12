@@ -1,5 +1,5 @@
 import { formatTokens } from "@tinyclaude/ui-common";
-import { COLORS } from "../../constants";
+import { CHART_COLORS, COLORS } from "../../constants";
 import { formatCompactNumber } from "../../lib/chart-utils";
 import { BaseAreaChart } from "./BaseAreaChart";
 
@@ -28,12 +28,12 @@ export function TokenUsageChart({
 		<linearGradient id="colorTokens" x1="0" y1="0" x2="0" y2="1">
 			<stop
 				offset="0%"
-				stopColor={viewMode === "cumulative" ? COLORS.blue : COLORS.primary}
+				stopColor={viewMode === "cumulative" ? CHART_COLORS[1] : COLORS.primary}
 				stopOpacity={0.9}
 			/>
 			<stop
 				offset="100%"
-				stopColor={viewMode === "cumulative" ? COLORS.blue : COLORS.primary}
+				stopColor={viewMode === "cumulative" ? CHART_COLORS[1] : COLORS.primary}
 				stopOpacity={0.1}
 			/>
 		</linearGradient>
@@ -45,7 +45,7 @@ export function TokenUsageChart({
 			dataKey="tokens"
 			loading={loading}
 			height={height}
-			color={viewMode === "cumulative" ? COLORS.blue : COLORS.primary}
+			color={viewMode === "cumulative" ? CHART_COLORS[1] : COLORS.primary}
 			gradientId="colorTokens"
 			customGradient={gradient}
 			strokeWidth={viewMode === "cumulative" ? 3 : 2}

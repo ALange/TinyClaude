@@ -1,19 +1,23 @@
 import * as React from "react";
 
 import { cn } from "../../lib/utils";
+import { PanelCorners } from "./panel-corners";
 
 const Card = React.forwardRef<
 	HTMLDivElement,
 	React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
+>(({ className, children, ...props }, ref) => (
 	<div
 		ref={ref}
 		className={cn(
-			"rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md transition-shadow duration-200",
+			"relative border border-border bg-card text-card-foreground",
 			className,
 		)}
 		{...props}
-	/>
+	>
+		<PanelCorners />
+		{children}
+	</div>
 ));
 Card.displayName = "Card";
 
@@ -35,7 +39,10 @@ const CardTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
 	<h3
 		ref={ref}
-		className={cn("font-semibold leading-none tracking-tight", className)}
+		className={cn(
+			"text-xs font-medium uppercase tracking-widest text-muted-foreground",
+			className,
+		)}
 		{...props}
 	/>
 ));
