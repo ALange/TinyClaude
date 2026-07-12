@@ -3,6 +3,8 @@
 
 A load-balancing proxy for the Claude API — distributes requests across multiple accounts and providers to avoid rate limits, with request compression, prompt-cache keepalive, and full request-level analytics.
 
+![tinyclaude Dashboard](apps/lander/src/screenshot-dashboard.png)
+
 ## Usage
 
 ```bash
