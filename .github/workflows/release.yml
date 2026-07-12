@@ -29,7 +29,7 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
-          bun publish --access public
+          npm publish --access public
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
