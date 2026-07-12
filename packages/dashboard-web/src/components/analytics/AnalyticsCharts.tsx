@@ -619,7 +619,7 @@ export function TokenUsageBreakdown({
 											index === 0
 												? CHART_COLORS[1]
 												: index === 1
-													? COLORS.success
+													? CHART_COLORS[4]
 													: index === 2
 														? CHART_COLORS[3]
 														: CHART_COLORS[2],
@@ -855,7 +855,7 @@ export function CumulativeTokenComposition({
 												index === 0
 													? CHART_COLORS[1]
 													: index === 1
-														? COLORS.success
+														? CHART_COLORS[4]
 														: index === 2
 															? CHART_COLORS[3]
 															: CHART_COLORS[2]
@@ -892,7 +892,7 @@ export function CumulativeTokenComposition({
 											index === 0
 												? CHART_COLORS[1]
 												: index === 1
-													? COLORS.success
+													? CHART_COLORS[4]
 													: index === 2
 														? CHART_COLORS[3]
 														: CHART_COLORS[2],

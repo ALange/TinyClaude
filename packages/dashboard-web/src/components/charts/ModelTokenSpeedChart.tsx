@@ -31,7 +31,7 @@ interface ModelTokenSpeedChartProps {
 // Model-based color palette (grayscale — decorative per-model identity, not status)
 const MODEL_COLORS: Record<string, string> = {
 	"claude-3.5-sonnet": CHART_COLORS[2],
-	"claude-3.5-haiku": COLORS.success,
+	"claude-3.5-haiku": CHART_COLORS[0],
 	"claude-3-opus": CHART_COLORS[1],
 	"claude-opus-4": CHART_COLORS[3],
 	"claude-opus-4.1": CHART_COLORS[4],
