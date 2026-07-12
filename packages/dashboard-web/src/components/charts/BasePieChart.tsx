@@ -61,7 +61,7 @@ export function BasePieChart({
 	legendLayout = "horizontal",
 	legendAlign = "center",
 	legendVerticalAlign = "bottom",
-	renderLabel = false,
+	renderLabel = true,
 	className = "",
 	error = null,
 	emptyState,
@@ -70,6 +70,12 @@ export function BasePieChart({
 	const chartHeight = getChartHeight(height);
 	const isEmpty = !data || data.length === 0;
 	const tooltipStyles = getTooltipStyles(tooltipStyle);
+	// Order slices largest-to-smallest so the grayscale ramp reads consistently
+	// (darkest/lightest steps map to the same rank every render) and adjacent
+	// slices stay visually distinguishable.
+	const sortedData = data
+		? [...data].sort((a, b) => Number(b[dataKey]) - Number(a[dataKey]))
+		: [];
 
 	return (
 		<ChartContainer
@@ -83,7 +89,7 @@ export function BasePieChart({
 			<ResponsiveContainer width="100%" height={chartHeight}>
 				<PieChart>
 					<Pie
-						data={data}
+						data={sortedData}
 						cx={cx}
 						cy={cy}
 						innerRadius={innerRadius}
@@ -95,7 +101,7 @@ export function BasePieChart({
 						label={renderLabel}
 						onClick={onPieClick}
 					>
-						{data.map((entry, index) => (
+						{sortedData.map((entry, index) => (
 							<Cell
 								key={`cell-${entry[nameKey]}`}
 								fill={colors[index % colors.length]}

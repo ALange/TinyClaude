@@ -87,6 +87,7 @@ export function BaseScatterChart({
 					<CartesianGrid
 						strokeDasharray={CHART_PROPS.strokeDasharray}
 						className={CHART_PROPS.gridClassName}
+						vertical={false}
 					/>
 					<XAxis
 						dataKey={xKey}

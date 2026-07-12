@@ -82,6 +82,7 @@ export function BaseAreaChart({
 					<CartesianGrid
 						strokeDasharray={CHART_PROPS.strokeDasharray}
 						className={CHART_PROPS.gridClassName}
+						vertical={false}
 					/>
 					<XAxis
 						dataKey={xAxisKey}

@@ -89,6 +89,7 @@ export function BaseBarChart({
 					<CartesianGrid
 						strokeDasharray={CHART_PROPS.strokeDasharray}
 						className={CHART_PROPS.gridClassName}
+						vertical={false}
 					/>
 					{layout === "vertical" ? (
 						<>
@@ -149,7 +150,7 @@ export function BaseBarChart({
 							fill={barConfig.fill || COLORS.primary}
 							name={barConfig.name || barConfig.dataKey}
 							yAxisId={barConfig.yAxisId}
-							radius={barConfig.radius}
+							radius={barConfig.radius ?? [0, 0, 0, 0]}
 							animationDuration={animationDuration}
 						/>
 					))}
