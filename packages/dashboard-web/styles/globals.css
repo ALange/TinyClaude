@@ -169,18 +169,6 @@
 		@apply bg-background/80 backdrop-blur-md;
 	}
 
-	/* Gradient text */
-	.gradient-text {
-		background: linear-gradient(
-			135deg,
-			var(--foreground) 0%,
-			var(--muted-foreground) 100%
-		);
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
-		background-clip: text;
-	}
-
 	/* Card hover effects */
 	.card-hover {
 		@apply transition-colors duration-200 hover:border-foreground/40;
