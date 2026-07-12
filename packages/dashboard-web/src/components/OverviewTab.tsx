@@ -207,7 +207,6 @@ export const OverviewTab = React.memo(() => {
 				<MetricCard
 					title="Total Requests"
 					value={formatNumber(analytics?.totals.requests || 0)}
-					rangeLabel={timeRange.toUpperCase()}
 					change={
 						trends.deltaRequests !== null ? trends.deltaRequests : undefined
 					}
