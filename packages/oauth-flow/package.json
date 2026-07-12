@@ -1,0 +1,15 @@
+{
+	"name": "@tinyclaude/oauth-flow",
+	"version": "0.1.0",
+	"type": "module",
+	"main": "./src/index.ts",
+	"scripts": {
+		"typecheck": "bunx tsc --noEmit"
+	},
+	"dependencies": {
+		"@tinyclaude/config": "workspace:*",
+		"@tinyclaude/database": "workspace:*",
+		"@tinyclaude/providers": "workspace:*",
+		"@tinyclaude/types": "workspace:*"
+	}
+}
