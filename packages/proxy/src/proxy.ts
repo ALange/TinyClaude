@@ -1,0 +1,625 @@
+import {
+	requestEvents,
+	ServiceUnavailableError,
+	trackClientVersion,
+} from "@tinyclaude/core";
+import { DatabaseFactory } from "@tinyclaude/database";
+import { Logger } from "@tinyclaude/logger";
+import { usageCache } from "@tinyclaude/providers";
+import type { Account } from "@tinyclaude/types";
+import { cacheBodyStore } from "./cache-body-store";
+import {
+	applyCompressionAndAlignment,
+	createPoolExhaustedResponse,
+	createRequestMetadata,
+	createUsageThrottledResponse,
+	ERROR_MESSAGES,
+	getComboSlotInfo,
+	getUsageThrottleUntil,
+	interceptAndModifyRequest,
+	isRefreshTokenLikelyExpired,
+	type ProxyContext,
+	prepareRequestBody,
+	proxyUnauthenticated,
+	proxyWithAccount,
+	RequestBodyContext,
+	type RequestJsonBody,
+	resolveEffectiveModel,
+	selectAccountsForRequest,
+	validateProviderPath,
+} from "./handlers";
+import {
+	getUsageCollector,
+	initUsageCollector,
+	tryGetUsageCollector,
+	type UsageCollectorHealth,
+} from "./usage-collector";
+
+export type { ProxyContext } from "./handlers";
+
+const log = new Logger("Proxy");
+
+const PROJECT_NAME_MAX_LEN = 64;
+
+function sanitizeProjectName(raw: string | undefined | null): string | null {
+	if (!raw) return null;
+	// biome-ignore lint/suspicious/noControlCharactersInRegex: stripping them is the point
+	const cleaned = raw.replace(/[\x00-\x1F\x7F]/g, "").trim();
+	if (!cleaned) return null;
+	return cleaned.length > PROJECT_NAME_MAX_LEN
+		? cleaned.slice(0, PROJECT_NAME_MAX_LEN)
+		: cleaned;
+}
+
+function extractSystemPrompt(body: RequestJsonBody | null): string | null {
+	if (!body) return null;
+	const system = body.system;
+
+	if (typeof system === "string") {
+		return system;
+	}
+
+	if (Array.isArray(system)) {
+		return system
+			.filter(
+				(item): item is { type?: string; text: string } =>
+					typeof item === "object" &&
+					item !== null &&
+					(item as { type?: string }).type === "text" &&
+					typeof (item as { text?: unknown }).text === "string",
+			)
+			.map((item) => item.text)
+			.join("\n");
+	}
+
+	return null;
+}
+
+function extractProjectFromRequest(
+	headers: Headers,
+	body: RequestJsonBody | null,
+): string | null {
+	const headerProject = headers.get("x-project");
+	const sanitizedHeader = sanitizeProjectName(headerProject);
+	if (sanitizedHeader) return sanitizedHeader;
+
+	const systemPrompt = extractSystemPrompt(body);
+	if (!systemPrompt) return null;
+
+	const pathMatch = systemPrompt.match(
+		/\/(?:Users|home)\/[^/]+\/(?:Desktop|projects|repos|src)\/([^/]+)\//,
+	);
+	const sanitizedPath = sanitizeProjectName(pathMatch?.[1]);
+	if (sanitizedPath) return sanitizedPath;
+
+	const headingMatch = systemPrompt.match(/^#\s+([^\n\r]{1,100})/m);
+	if (headingMatch) {
+		const heading = sanitizeProjectName(headingMatch[1]);
+		if (heading && !heading.toLowerCase().startsWith("claude")) {
+			return heading;
+		}
+	}
+
+	return null;
+}
+
+// ===== USAGE COLLECTOR MANAGEMENT =====
+
+export async function initProxy(
+	getStorePayloads: () => boolean,
+): Promise<void> {
+	await initUsageCollector(
+		getStorePayloads,
+		(summary) => {
+			requestEvents.emit("event", { type: "summary", payload: summary });
+		},
+		DatabaseFactory.getInstance(),
+	);
+}
+
+export async function drainUsageCollector(): Promise<void> {
+	return tryGetUsageCollector()?.drain() ?? Promise.resolve();
+}
+
+export function getUsageCollectorHealth(): UsageCollectorHealth {
+	return tryGetUsageCollector()?.getHealth() ?? { state: "ready" };
+}
+
+// ===== MAIN HANDLER =====
+
+/**
+ * Main proxy handler - orchestrates the entire proxy flow
+ *
+ * This function coordinates the proxy process by:
+ * 1. Creating request metadata for tracking
+ * 2. Validating the provider can handle the path
+ * 3. Preparing the request body for reuse
+ * 4. Selecting accounts based on load balancing strategy
+ * 5. Attempting to proxy with each account in order
+ * 6. Falling back to unauthenticated proxy if no accounts available
+ *
+ * @param req - The incoming request
+ * @param url - The parsed URL
+ * @param ctx - The proxy context containing strategy, database, and provider
+ * @param apiKeyId - Optional API key ID for tracking
+ * @param apiKeyName - Optional API key name for tracking
+ * @returns Promise resolving to the proxied response
+ * @throws {ValidationError} If the provider cannot handle the path
+ * @throws {ServiceUnavailableError} If all accounts fail to proxy the request
+ * @throws {ProviderError} If unauthenticated proxy fails
+ */
+export async function handleProxy(
+	req: Request,
+	url: URL,
+	ctx: ProxyContext,
+	apiKeyId?: string | null,
+	apiKeyName?: string | null,
+): Promise<Response> {
+	// 0. Silently ignore Claude Code internal endpoints (non-critical, not supported by all providers)
+	if (
+		url.pathname === "/api/event_logging/batch" ||
+		url.pathname === "/api/system/package-manager"
+	) {
+		return new Response(JSON.stringify({ success: true }), {
+			status: 200,
+			headers: { "Content-Type": "application/json" },
+		});
+	}
+
+	// 1. Track client version from user-agent for use in auto-refresh
+	trackClientVersion(req.headers.get("user-agent"));
+
+	// 2. Validate provider can handle path
+	validateProviderPath(ctx.provider, url.pathname);
+
+	// 3. Prepare request body
+	const { buffer: requestBodyBuffer } = await prepareRequestBody(req);
+	const requestBodyContext = new RequestBodyContext(requestBodyBuffer);
+
+	// 3b. Optionally inject 1h TTL into system prompt cache_control blocks
+	if (ctx.config.getSystemPromptCacheTtl1h() && requestBodyBuffer) {
+		injectSystemCacheTtl(requestBodyContext);
+	}
+
+	// Extract model from request body for family detection (used by combo routing)
+	// and reuse parsed body for /v1/messages validation (consolidate parses)
+	const parsedBody = requestBodyContext.getParsedJson();
+	const requestModel = requestBodyContext.getModel();
+	const project = extractProjectFromRequest(req.headers, parsedBody);
+
+	// 5. Create request metadata early (id is needed by the compression step
+	// below before finalBodyBuffer/finalCreateBodyStream are computed)
+	const requestMeta = createRequestMetadata(req, url);
+
+	// 3a. Validate request body for /v1/messages endpoint
+	if (url.pathname === "/v1/messages" && requestBodyBuffer) {
+		if (parsedBody) {
+			// Reject requests without messages field (e.g., Claude Code internal events)
+			if (!parsedBody.messages || !Array.isArray(parsedBody.messages)) {
+				log.warn(
+					`Rejected invalid request to /v1/messages without messages field`,
+					{
+						event_type: parsedBody.event_type,
+						event_name: (
+							parsedBody.event_data as Record<string, unknown> | undefined
+						)?.event_name,
+					},
+				);
+				return new Response(
+					JSON.stringify({
+						type: "error",
+						error: {
+							type: "invalid_request_error",
+							message:
+								"messages: Field required for /v1/messages endpoint. Internal events should not be proxied.",
+						},
+					}),
+					{
+						status: 400,
+						headers: { "Content-Type": "application/json" },
+					},
+				);
+			}
+		} else {
+			// If we can't parse the body, let it through and let the provider handle it
+			log.debug("Could not parse request body for validation");
+		}
+	}
+
+	// 4. Intercept and modify request for agent model preferences
+	const { modifiedBody, agentUsed, originalModel, appliedModel } =
+		await interceptAndModifyRequest(
+			requestBodyContext,
+			ctx.dbOps,
+			req.headers,
+			{
+				frontmatterModelFallback: ctx.config.getAgentFrontmatterModelFallback(),
+			},
+		);
+
+	if (agentUsed && originalModel !== appliedModel) {
+		log.info(
+			`Agent ${agentUsed} detected, model changed from ${originalModel} to ${appliedModel}`,
+		);
+	}
+
+	// 5. Populate request metadata with agent info
+	requestMeta.agentUsed = agentUsed;
+	requestMeta.project = project;
+	requestMeta.clientSessionId = requestBodyContext.getClientId();
+	requestMeta.originalModel = originalModel;
+	requestMeta.appliedModel = appliedModel;
+
+	// Always score cache alignment; compress tool_result blocks if enabled
+	const { alignmentScore, volatileFindingsCount } =
+		applyCompressionAndAlignment(requestBodyContext, ctx, requestMeta.id);
+	requestMeta.alignmentScore = alignmentScore;
+	requestMeta.volatileFindingsCount = volatileFindingsCount;
+
+	// Snapshot for proxyUnauthenticated (which has no RequestBodyContext threading)
+	// and as a fallback `requestBodyBuffer` param for proxyWithAccount. The
+	// compression-enabled path never relies on this snapshot: proxyWithAccount
+	// is called with `requestBodyContext` (the same object mutated in place by
+	// applyCompressionAndAlignment above) and prefers it over this buffer, so
+	// compressed content actually reaches upstream via requestBodyContext.getBuffer()
+	// called fresh at request time, not via this value.
+	const finalBodyBuffer = modifiedBody || requestBodyContext.getBuffer();
+	const finalCreateBodyStream = () => {
+		if (!finalBodyBuffer) return undefined;
+		return new Response(finalBodyBuffer).body ?? undefined;
+	};
+
+	// 6. Select accounts. Route on the model that will actually be sent
+	// upstream (post-interceptor-rewrite), not the model the client asked
+	// for — otherwise combo routing and family-based selection see a model
+	// that no longer matches the outgoing request.
+	const effectiveModel = resolveEffectiveModel(appliedModel, requestModel);
+	const selectedAccounts = await selectAccountsForRequest(
+		requestMeta,
+		ctx,
+		effectiveModel ?? undefined,
+	);
+
+	const applyUsageThrottling = (accounts: Account[]) => {
+		const settings = {
+			fiveHourEnabled: ctx.config.getUsageThrottlingFiveHourEnabled(),
+			weeklyEnabled: ctx.config.getUsageThrottlingWeeklyEnabled(),
+		};
+		if (!settings.fiveHourEnabled && !settings.weeklyEnabled) {
+			return { available: accounts, throttled: [] as Account[] };
+		}
+
+		const now = Date.now();
+		const available: Account[] = [];
+		const throttled: Account[] = [];
+
+		// Model-aware throttling: a per-model weekly cap should only throttle
+		// requests for that model. Use the effective (post-intercept) request
+		// model; combo-routed requests assign per-slot models later, so skip
+		// scoped caps (null) and rely on the flat windows + reactive out_of_credits.
+		// combo routing sets meta.comboName during selection and CLEARS it on the
+		// step-10 fallback; use it (not the stale comboSlotInfo WeakMap, which the
+		// fallback does not clear) so fallback routing still applies per-model scoped
+		// throttling for its now-known single model.
+		const comboRouted = requestMeta.comboName != null;
+		const effectiveModel = appliedModel ?? requestModel ?? null;
+
+		for (const account of accounts) {
+			const throttleUntil = getUsageThrottleUntil(
+				usageCache.get(account.id),
+				settings,
+				now,
+				{
+					requestModel: comboRouted ? null : effectiveModel,
+					scopedMode: "match",
+				},
+			);
+			if (throttleUntil && throttleUntil > now) {
+				throttled.push(account);
+				continue;
+			}
+			available.push(account);
+		}
+
+		if (throttled.length > 0) {
+			log.info(
+				`Usage-throttled ${throttled.length} account(s): ${throttled.map((account) => account.name).join(", ")}`,
+			);
+		}
+
+		return { available, throttled };
+	};
+
+	const { available: accounts, throttled: throttledAccounts } =
+		applyUsageThrottling(selectedAccounts);
+
+	// 7. Handle no accounts case
+	if (accounts.length === 0) {
+		if (throttledAccounts.length > 0) {
+			return createUsageThrottledResponse(throttledAccounts);
+		}
+
+		// Check feature flag for backwards compatibility
+		if (process.env.TINYCLAUDE_PASSTHROUGH_ON_EMPTY_POOL === "1") {
+			log.warn(ERROR_MESSAGES.NO_ACCOUNTS);
+			return proxyUnauthenticated(
+				req,
+				url,
+				requestMeta,
+				finalBodyBuffer,
+				finalCreateBodyStream,
+				ctx,
+				apiKeyId,
+				apiKeyName,
+			);
+		}
+
+		// Return 503 pool_exhausted response (default behavior)
+		log.error(ERROR_MESSAGES.POOL_EXHAUSTED);
+
+		// Log to request history via worker
+		// Re-fetch from DB — selectedAccounts is empty here (strategy already
+		// filtered out unavailable accounts), so we need fresh data to populate
+		// per-account cooldown info in the 503 body.
+		const allAccounts = (await ctx.dbOps.getAllAccounts()).filter(
+			(a) => a.provider === ctx.provider.name,
+		);
+
+		const poolExhaustedResponse = createPoolExhaustedResponse(allAccounts);
+
+		// Skip request-log staging for synthetic auto-refresh probes that
+		// 503 because their target account is on a known cooldown. Logging
+		// these as user-facing 503s inflates the dashboard fail-rate without
+		// reflecting any real client impact (issue #199, bug 2). The keepalive
+		// scheduler already gets the equivalent treatment via its loop-prevention
+		// header path; this brings auto-refresh in line.
+		const isAutoRefreshProbe =
+			req.headers.get("x-tinyclaude-auto-refresh") === "true";
+		if (!isAutoRefreshProbe) {
+			// Log to request history via usage collector
+			getUsageCollector().handleStart({
+				type: "start",
+				messageId: crypto.randomUUID(),
+				requestId: requestMeta.id,
+				accountId: null,
+				method: req.method,
+				path: url.pathname,
+				timestamp: requestMeta.timestamp,
+				requestHeaders: Object.fromEntries(req.headers.entries()),
+				requestBody: null,
+				project: project ?? null,
+				responseStatus: 503,
+				responseHeaders: Object.fromEntries(
+					poolExhaustedResponse.headers.entries(),
+				),
+				isStream: false,
+				providerName: ctx.provider.name,
+				accountBillingType: null,
+				accountAutoPauseOnOverageEnabled: 0,
+				accountName: null,
+				agentUsed: agentUsed || null,
+				originalModel: originalModel || null,
+				appliedModel: appliedModel || null,
+				comboName: null,
+				apiKeyId: apiKeyId || null,
+				apiKeyName: apiKeyName || null,
+				retryAttempt: 0,
+				failoverAttempts: 0,
+				alignmentScore: null,
+				volatileFindingsCount: null,
+			});
+
+			getUsageCollector()
+				.handleEnd({
+					type: "end",
+					requestId: requestMeta.id,
+					success: false,
+					error: "pool_exhausted",
+				})
+				.catch((err: unknown) => {
+					log.error(
+						`handleEnd failed for pool_exhausted request ${requestMeta.id}`,
+						err,
+					);
+				});
+		}
+
+		return poolExhaustedResponse;
+	}
+
+	// 8. Log selected accounts
+	log.info(
+		`Selected ${accounts.length} accounts: ${accounts.map((a) => a.name).join(", ")}`,
+	);
+	if (
+		process.env.DEBUG?.includes("proxy") ||
+		process.env.DEBUG === "true" ||
+		process.env.NODE_ENV === "development"
+	) {
+		log.info(`Request: ${req.method} ${url.pathname}`);
+	}
+
+	// 9. Try each account
+	const comboInfo = getComboSlotInfo(requestMeta);
+	const allowedAccountIds = new Set(accounts.map((account) => account.id));
+	const filteredComboInfo = comboInfo
+		? {
+				...comboInfo,
+				slots: comboInfo.slots.filter((slot) =>
+					allowedAccountIds.has(slot.accountId),
+				),
+			}
+		: null;
+	let response: Response | null = null;
+
+	for (let i = 0; i < accounts.length; i++) {
+		// For combo routing: enrich metadata with slot index and look up model override
+		let modelOverride: string | null = null;
+		if (filteredComboInfo?.slots[i]) {
+			const slot = filteredComboInfo.slots[i];
+			if (slot.accountId !== accounts[i].id) {
+				log.error(
+					`Combo slot/account desync: slot ${i} expects account ${slot.accountId} but got ${accounts[i].id}`,
+				);
+			} else {
+				modelOverride = slot.modelOverride;
+			}
+			requestMeta.comboSlotIndex = i;
+			log.info(
+				`Attempting combo slot ${i}/${accounts.length - 1} on account ${accounts[i].name} with model "${modelOverride}"`,
+			);
+		}
+
+		response = await proxyWithAccount(
+			req,
+			url,
+			accounts[i],
+			requestMeta,
+			finalBodyBuffer,
+			finalCreateBodyStream,
+			i,
+			ctx,
+			modelOverride,
+			apiKeyId,
+			apiKeyName,
+			requestBodyContext,
+			!filteredComboInfo?.comboName && i === accounts.length - 1,
+		);
+
+		if (response) {
+			return response;
+		}
+
+		// Log combo slot failure
+		if (filteredComboInfo) {
+			log.info(
+				`Combo slot ${i} failed on account ${accounts[i].name}${i < accounts.length - 1 ? ", trying next slot" : ", all combo slots exhausted"}`,
+			);
+		}
+	}
+
+	// 10. Combo fallback: if combo routing was active and all slots failed,
+	//     fall back to normal SessionStrategy routing (REQ-14)
+	let fallbackAccounts: Account[] | null = null;
+	if (filteredComboInfo?.comboName) {
+		log.warn(
+			`All combo slots failed for combo "${filteredComboInfo.comboName}", falling back to SessionStrategy routing`,
+		);
+		// Clear combo info and retry with normal routing
+		requestMeta.comboName = null;
+		requestMeta.comboSlotIndex = null;
+		const selectedFallbackAccounts = await selectAccountsForRequest(
+			requestMeta,
+			ctx,
+		);
+		const {
+			available: filteredFallbackAccounts,
+			throttled: throttledFallbackAccounts,
+		} = applyUsageThrottling(selectedFallbackAccounts);
+		fallbackAccounts = filteredFallbackAccounts;
+
+		if (fallbackAccounts.length > 0) {
+			log.info(
+				`Fallback: trying ${fallbackAccounts.length} SessionStrategy accounts`,
+			);
+			for (let i = 0; i < fallbackAccounts.length; i++) {
+				response = await proxyWithAccount(
+					req,
+					url,
+					fallbackAccounts[i],
+					requestMeta,
+					finalBodyBuffer,
+					finalCreateBodyStream,
+					i,
+					ctx,
+					undefined, // No model override for fallback path
+					apiKeyId,
+					apiKeyName,
+					requestBodyContext,
+					i === fallbackAccounts.length - 1,
+				);
+
+				if (response) {
+					return response;
+				}
+			}
+		} else if (throttledFallbackAccounts.length > 0) {
+			cacheBodyStore.discardStaged(requestMeta.id);
+			return createUsageThrottledResponse(throttledFallbackAccounts);
+		}
+	}
+
+	// 11. All accounts failed - check if OAuth token issues are the cause
+	const allAttemptedAccounts = filteredComboInfo
+		? [...accounts, ...(fallbackAccounts ?? [])]
+		: accounts;
+	const oauthAccounts = allAttemptedAccounts.filter((acc) => acc.refresh_token);
+	const needsReauth = oauthAccounts.filter((acc) =>
+		isRefreshTokenLikelyExpired(acc),
+	);
+
+	if (needsReauth.length > 0) {
+		// Quote account names to prevent command injection (defense-in-depth)
+		const reauthCommands = needsReauth
+			.map(
+				(acc) =>
+					`bun run cli --reauthenticate "${acc.name.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`,
+			)
+			.join("\n  ");
+		cacheBodyStore.discardStaged(requestMeta.id);
+		throw new ServiceUnavailableError(
+			`All accounts failed to proxy the request. OAuth tokens have expired for accounts: ${needsReauth.map((acc) => acc.name).join(", ")}.\n\nPlease re-authenticate:\n  ${reauthCommands}`,
+			ctx.provider.name,
+		);
+	}
+
+	cacheBodyStore.discardStaged(requestMeta.id);
+	throw new ServiceUnavailableError(
+		`${ERROR_MESSAGES.ALL_ACCOUNTS_FAILED} (${allAttemptedAccounts.length} attempted)`,
+		ctx.provider.name,
+	);
+}
+
+/**
+ * Injects `ttl: "1h"` into system-level cache_control blocks that are missing a TTL.
+ * ArrayBuffer overload: returns modified buffer or null (no changes).
+ * RequestBodyContext overload: mutates in-place via markDirty(); return value unused.
+ */
+export function injectSystemCacheTtl(buf: ArrayBuffer): ArrayBuffer | null;
+export function injectSystemCacheTtl(context: RequestBodyContext): void;
+export function injectSystemCacheTtl(
+	input: ArrayBuffer | RequestBodyContext,
+): ArrayBuffer | null {
+	const bodyContext =
+		input instanceof RequestBodyContext ? input : new RequestBodyContext(input);
+	try {
+		const body = bodyContext.getParsedJson() as
+			| (RequestJsonBody & {
+					system?: Array<{ cache_control?: { type?: string; ttl?: string } }>;
+			  })
+			| null;
+		if (!body) return null;
+		if (!Array.isArray(body.system)) return null;
+		const blocksToUpdate = body.system.filter(
+			(block) =>
+				block.cache_control?.type === "ephemeral" && !block.cache_control.ttl,
+		);
+		if (blocksToUpdate.length === 0) return null;
+		bodyContext.mutateParsedJson((b) => {
+			const typedBody = b as RequestJsonBody & {
+				system: Array<{ cache_control?: { type?: string; ttl?: string } }>;
+			};
+			for (const block of typedBody.system) {
+				if (
+					block.cache_control?.type === "ephemeral" &&
+					!block.cache_control.ttl
+				) {
+					block.cache_control.ttl = "1h";
+				}
+			}
+		});
+		return bodyContext.getBuffer();
+	} catch {
+		return null;
+	}
+}

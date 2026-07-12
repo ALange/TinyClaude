@@ -1,0 +1,21 @@
+{
+	"name": "@tinyclaude/cli-commands",
+	"version": "0.1.0",
+	"type": "module",
+	"main": "./src/index.ts",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"scripts": {
+		"typecheck": "bunx tsc --noEmit"
+	},
+	"dependencies": {
+		"@tinyclaude/core": "workspace:*",
+		"@tinyclaude/core-di": "workspace:*",
+		"@tinyclaude/database": "workspace:*",
+		"@tinyclaude/config": "workspace:*",
+		"@tinyclaude/providers": "workspace:*",
+		"@tinyclaude/oauth-flow": "workspace:*",
+		"open": "^11.0.0"
+	}
+}

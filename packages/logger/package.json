@@ -1,0 +1,16 @@
+{
+	"name": "@tinyclaude/logger",
+	"version": "0.1.0",
+	"type": "module",
+	"main": "./src/index.ts",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"scripts": {
+		"typecheck": "bunx tsc --noEmit"
+	},
+	"dependencies": {
+		"@tinyclaude/core": "workspace:*",
+		"@tinyclaude/types": "workspace:*"
+	}
+}
