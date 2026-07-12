@@ -17,6 +17,8 @@ export interface MetricCardProps {
 	trend?: "up" | "down" | "flat";
 	trendPeriod?: string;
 	subRows?: MetricCardSubRow[];
+	rangeLabel?: string;
+	unit?: string;
 }
 
 export function MetricCard({
@@ -27,6 +29,8 @@ export function MetricCard({
 	trend,
 	trendPeriod,
 	subRows,
+	rangeLabel,
+	unit,
 }: MetricCardProps) {
 	const trendElement = trend !== "flat" && change !== undefined && (
 		<div
@@ -65,8 +69,24 @@ export function MetricCard({
 					)}
 				</div>
 				<div className="space-y-1">
-					<p className="text-sm text-muted-foreground">{title}</p>
-					<p className="text-2xl font-bold">{value}</p>
+					<div className="flex items-center justify-between">
+						<p className="text-xs uppercase tracking-widest text-muted-foreground">
+							{title}
+						</p>
+						{rangeLabel && (
+							<span className="text-xs uppercase tracking-wide text-muted-foreground">
+								{rangeLabel}
+							</span>
+						)}
+					</div>
+					<p className="text-2xl font-bold tabular-nums">
+						{value}
+						{unit && (
+							<span className="ml-1 text-sm font-normal text-muted-foreground">
+								{unit}
+							</span>
+						)}
+					</p>
 				</div>
 				{subRows && subRows.length > 0 && (
 					<div className="mt-3 pt-3 border-t border-border/50 space-y-1">
