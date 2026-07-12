@@ -343,7 +343,9 @@ export function Navigation({
 			<div className="lg:hidden fixed top-0 left-0 right-0 z-50 h-16 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b px-4 flex items-center justify-between">
 				<div className="flex items-center gap-3">
 					<Shield className="h-6 w-6 text-primary" />
-					<span className="font-semibold text-lg">tinyclaude</span>
+					<span className="font-semibold text-lg tracking-wide">
+						tinyclaude
+					</span>
 				</div>
 				<div className="flex items-center gap-2">
 					<ThemeToggle />
@@ -374,7 +376,7 @@ export function Navigation({
 			{/* Sidebar */}
 			<aside
 				className={cn(
-					"fixed left-0 top-0 z-40 h-screen w-64 bg-card border-r transition-transform duration-300 lg:translate-x-0",
+					"fixed left-0 top-0 z-40 h-screen w-64 bg-background border-r border-border transition-transform duration-300 lg:translate-x-0",
 					isMobileMenuOpen
 						? "translate-x-0"
 						: "-translate-x-full lg:translate-x-0",
@@ -384,11 +386,13 @@ export function Navigation({
 					{/* Logo */}
 					<div className="p-6 pb-4">
 						<div className="flex items-center gap-3">
-							<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+							<div className="flex h-10 w-10 items-center justify-center bg-primary/10">
 								<Shield className="h-6 w-6 text-primary" />
 							</div>
 							<div>
-								<h1 className="font-semibold text-lg">tinyclaude</h1>
+								<h1 className="font-semibold text-lg tracking-wide">
+									tinyclaude
+								</h1>
 								<p className="text-xs text-muted-foreground">
 									Powerful proxy for Claude Code
 								</p>
@@ -414,13 +418,15 @@ export function Navigation({
 										className={cn(
 											"w-full justify-start gap-3 transition-all",
 											isActive &&
-												"bg-primary/10 text-primary hover:bg-primary/20",
+												"bg-primary text-primary-foreground hover:bg-primary/90",
 										)}
 									>
 										<Icon className="h-4 w-4" />
-										{item.label}
+										<span className="uppercase tracking-wide text-sm">
+											{item.label}
+										</span>
 										{item.badge && (
-											<span className="ml-auto rounded-full bg-primary/20 px-2 py-0.5 text-xs font-medium">
+											<span className="ml-auto border border-border bg-transparent px-2 py-0.5 text-xs font-medium">
 												{item.badge}
 											</span>
 										)}
