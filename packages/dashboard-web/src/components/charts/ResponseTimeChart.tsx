@@ -1,4 +1,4 @@
-import { COLORS } from "../../constants";
+import { CHART_COLORS, COLORS } from "../../constants";
 import { BaseAreaChart } from "./BaseAreaChart";
 
 interface ResponseTimeChartProps {
@@ -28,7 +28,7 @@ export function ResponseTimeChart({
 			dataKey="responseTime"
 			loading={loading}
 			height={height}
-			color={viewMode === "cumulative" ? COLORS.purple : COLORS.primary}
+			color={viewMode === "cumulative" ? CHART_COLORS[2] : COLORS.primary}
 			strokeWidth={viewMode === "cumulative" ? 3 : 2}
 			xAxisAngle={isLongRange ? -45 : 0}
 			xAxisTextAnchor={isLongRange ? "end" : "middle"}

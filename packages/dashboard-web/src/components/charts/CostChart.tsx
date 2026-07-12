@@ -1,5 +1,5 @@
 import { formatCost } from "@tinyclaude/ui-common";
-import { COLORS } from "../../constants";
+import { CHART_COLORS, COLORS } from "../../constants";
 import { formatCompactCurrency } from "../../lib/chart-utils";
 import { BaseAreaChart } from "./BaseAreaChart";
 
@@ -28,12 +28,12 @@ export function CostChart({
 		<linearGradient id="colorCost" x1="0" y1="0" x2="0" y2="1">
 			<stop
 				offset="0%"
-				stopColor={viewMode === "cumulative" ? COLORS.warning : COLORS.primary}
+				stopColor={viewMode === "cumulative" ? CHART_COLORS[3] : COLORS.primary}
 				stopOpacity={0.9}
 			/>
 			<stop
 				offset="100%"
-				stopColor={viewMode === "cumulative" ? COLORS.warning : COLORS.primary}
+				stopColor={viewMode === "cumulative" ? CHART_COLORS[3] : COLORS.primary}
 				stopOpacity={0.1}
 			/>
 		</linearGradient>
@@ -45,7 +45,7 @@ export function CostChart({
 			dataKey="cost"
 			loading={loading}
 			height={height}
-			color={viewMode === "cumulative" ? COLORS.warning : COLORS.primary}
+			color={viewMode === "cumulative" ? CHART_COLORS[3] : COLORS.primary}
 			gradientId="colorCost"
 			customGradient={gradient}
 			strokeWidth={viewMode === "cumulative" ? 3 : 2}

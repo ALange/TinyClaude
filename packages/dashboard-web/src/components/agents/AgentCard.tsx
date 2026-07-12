@@ -90,9 +90,7 @@ export function AgentCard({ agent }: AgentCardProps) {
 		isWorkspaceAgent && agent.id.includes(":") ? agent.id.split(":")[0] : null;
 
 	return (
-		<Card
-			className={`group relative overflow-hidden transition-all hover:shadow-lg ${colors.border} border-2`}
-		>
+		<Card className={`group relative transition-all ${colors.border} border`}>
 			{/* Gradient background overlay */}
 			<div className={`absolute inset-0 ${colors.bg} opacity-50`} />
 
@@ -101,7 +99,7 @@ export function AgentCard({ agent }: AgentCardProps) {
 					<div className="flex items-start justify-between">
 						<div className="flex items-center gap-3">
 							<div
-								className={`p-2.5 rounded-xl ${colors.bg} ${colors.border} border backdrop-blur-sm`}
+								className={`p-2.5 rounded-none ${colors.bg} ${colors.border} border backdrop-blur-sm`}
 							>
 								<Bot className={`h-5 w-5 ${colors.icon}`} />
 							</div>

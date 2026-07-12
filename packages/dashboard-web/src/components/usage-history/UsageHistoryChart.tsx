@@ -1,15 +1,16 @@
 import type { UsageHistoryWindowSeries } from "@tinyclaude/types";
 import { useMemo } from "react";
-import { COLORS } from "../../constants";
+import { CHART_COLORS, COLORS } from "../../constants";
 import { BaseLineChart } from "../charts/BaseLineChart";
 import { getTooltipStyles } from "../charts/chart-utils";
 import { buildUsageChartData } from "./chart-data";
 
+// Decorative per-window identity colors (grayscale, not status signals).
 const WINDOW_COLORS: Record<string, string> = {
 	five_hour: COLORS.primary,
-	seven_day: COLORS.blue,
-	seven_day_opus: COLORS.purple,
-	seven_day_sonnet: COLORS.cyan,
+	seven_day: CHART_COLORS[1],
+	seven_day_opus: CHART_COLORS[2],
+	seven_day_sonnet: CHART_COLORS[0],
 };
 
 const PRED_SUFFIX = "__pred";
@@ -109,7 +110,7 @@ export function UsageHistoryChart({
 			const lines = [
 				...windowKeys.map((key) => ({
 					dataKey: key,
-					stroke: WINDOW_COLORS[key] ?? COLORS.indigo,
+					stroke: WINDOW_COLORS[key] ?? CHART_COLORS[4],
 					name: key,
 					connectNulls: true, // bridge the gaps left by per-window sampling
 				})),
@@ -118,7 +119,7 @@ export function UsageHistoryChart({
 					const base = key.replace("__pred", "");
 					return {
 						dataKey: key,
-						stroke: WINDOW_COLORS[base] ?? COLORS.indigo,
+						stroke: WINDOW_COLORS[base] ?? CHART_COLORS[4],
 						name: `${base} (forecast)`,
 						strokeDasharray: "6 4",
 						strokeWidth: 1,
@@ -129,7 +130,7 @@ export function UsageHistoryChart({
 
 			const referenceLines = markers.map((m) => ({
 				x: m.x,
-				stroke: COLORS.warning,
+				stroke: CHART_COLORS[3],
 				label: m.label,
 			}));
 

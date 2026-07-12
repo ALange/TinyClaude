@@ -1,5 +1,5 @@
 import { formatNumber } from "@tinyclaude/ui-common";
-import { COLORS } from "../../constants";
+import { CHART_COLORS, COLORS } from "../../constants";
 import { formatCompactNumber } from "../../lib/chart-utils";
 import { BaseAreaChart } from "./BaseAreaChart";
 
@@ -27,9 +27,9 @@ export function RequestVolumeChart({
 	const gradient =
 		viewMode === "cumulative" ? (
 			<linearGradient id="colorRequests" x1="0" y1="0" x2="0" y2="1">
-				<stop offset="0%" stopColor={COLORS.purple} stopOpacity={0.9} />
+				<stop offset="0%" stopColor={CHART_COLORS[2]} stopOpacity={0.9} />
 				<stop offset="50%" stopColor={COLORS.primary} stopOpacity={0.7} />
-				<stop offset="100%" stopColor={COLORS.blue} stopOpacity={0.3} />
+				<stop offset="100%" stopColor={CHART_COLORS[1]} stopOpacity={0.3} />
 			</linearGradient>
 		) : undefined;
 
@@ -39,7 +39,7 @@ export function RequestVolumeChart({
 			dataKey="requests"
 			loading={loading}
 			height={height}
-			color={viewMode === "cumulative" ? COLORS.purple : COLORS.primary}
+			color={viewMode === "cumulative" ? CHART_COLORS[2] : COLORS.primary}
 			gradientId="colorRequests"
 			customGradient={gradient}
 			strokeWidth={viewMode === "cumulative" ? 3 : 2}

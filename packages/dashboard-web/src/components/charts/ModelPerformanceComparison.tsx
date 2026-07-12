@@ -14,7 +14,12 @@ import {
 	XAxis,
 	YAxis,
 } from "recharts";
-import { CHART_HEIGHTS, CHART_PROPS, COLORS } from "../../constants";
+import {
+	CHART_COLORS,
+	CHART_HEIGHTS,
+	CHART_PROPS,
+	COLORS,
+} from "../../constants";
 import { ChartContainer } from "./ChartContainer";
 import { getTooltipStyles } from "./chart-utils";
 
@@ -34,15 +39,15 @@ interface ModelPerformanceComparisonProps {
 	viewMode?: "speed-cost" | "performance" | "efficiency";
 }
 
-// Model-based color palette
+// Model-based color palette (grayscale — decorative per-model identity, not status)
 const MODEL_COLORS: Record<string, string> = {
-	"claude-3.5-sonnet": COLORS.purple,
+	"claude-3.5-sonnet": CHART_COLORS[2],
 	"claude-3.5-haiku": COLORS.success,
-	"claude-3-opus": COLORS.blue,
-	"claude-opus-4": COLORS.pink,
-	"claude-opus-4.1": COLORS.indigo,
-	"claude-sonnet-4": COLORS.cyan,
-	"claude-sonnet-4.5": COLORS.purple,
+	"claude-3-opus": CHART_COLORS[1],
+	"claude-opus-4": CHART_COLORS[3],
+	"claude-opus-4.1": CHART_COLORS[4],
+	"claude-sonnet-4": CHART_COLORS[0],
+	"claude-sonnet-4.5": CHART_COLORS[2],
 };
 
 function getModelColor(model: string): string {
@@ -93,32 +98,29 @@ export function ModelPerformanceComparison({
 					>
 						<defs>
 							<linearGradient id="speedGradient" x1="0" y1="0" x2="0" y2="1">
-								<stop offset="0%" stopColor={COLORS.purple} stopOpacity={0.9} />
+								<stop
+									offset="0%"
+									stopColor={CHART_COLORS[2]}
+									stopOpacity={0.9}
+								/>
 								<stop
 									offset="100%"
-									stopColor={COLORS.purple}
+									stopColor={CHART_COLORS[2]}
 									stopOpacity={0.3}
 								/>
 							</linearGradient>
 							<linearGradient id="costGradient" x1="0" y1="0" x2="0" y2="1">
 								<stop
 									offset="0%"
-									stopColor={COLORS.warning}
+									stopColor={CHART_COLORS[3]}
 									stopOpacity={0.9}
 								/>
 								<stop
 									offset="100%"
-									stopColor={COLORS.warning}
+									stopColor={CHART_COLORS[3]}
 									stopOpacity={0.3}
 								/>
 							</linearGradient>
-							<filter id="glow">
-								<feGaussianBlur stdDeviation="3" result="coloredBlur" />
-								<feMerge>
-									<feMergeNode in="coloredBlur" />
-									<feMergeNode in="SourceGraphic" />
-								</feMerge>
-							</filter>
 						</defs>
 						<CartesianGrid
 							strokeDasharray={CHART_PROPS.strokeDasharray}
@@ -135,25 +137,25 @@ export function ModelPerformanceComparison({
 						<YAxis
 							yAxisId="speed"
 							orientation="left"
-							stroke={COLORS.purple}
+							stroke={CHART_COLORS[2]}
 							fontSize={12}
 							label={{
 								value: "Tokens/Second",
 								angle: -90,
 								position: "insideLeft",
-								style: { textAnchor: "middle", fill: COLORS.purple },
+								style: { textAnchor: "middle", fill: CHART_COLORS[2] },
 							}}
 						/>
 						<YAxis
 							yAxisId="cost"
 							orientation="right"
-							stroke={COLORS.warning}
+							stroke={CHART_COLORS[3]}
 							fontSize={12}
 							label={{
 								value: "Cost per 1K Tokens ($)",
 								angle: 90,
 								position: "insideRight",
-								style: { textAnchor: "middle", fill: COLORS.warning },
+								style: { textAnchor: "middle", fill: CHART_COLORS[3] },
 							}}
 						/>
 						<Tooltip
@@ -179,17 +181,15 @@ export function ModelPerformanceComparison({
 							dataKey="avgTokensPerSecond"
 							name="Speed"
 							fill="url(#speedGradient)"
-							filter="url(#glow)"
 						/>
 						<Line
 							yAxisId="cost"
 							type="monotone"
 							dataKey="costPer1kTokens"
 							name="Cost/1K"
-							stroke={COLORS.warning}
+							stroke={CHART_COLORS[3]}
 							strokeWidth={3}
-							dot={{ fill: COLORS.warning, r: 4 }}
-							filter="url(#glow)"
+							dot={{ fill: CHART_COLORS[3], r: 4 }}
 						/>
 					</ComposedChart>
 				</ResponsiveContainer>
@@ -216,8 +216,16 @@ export function ModelPerformanceComparison({
 					>
 						<defs>
 							<linearGradient id="responseGradient" x1="0" y1="0" x2="0" y2="1">
-								<stop offset="0%" stopColor={COLORS.blue} stopOpacity={0.9} />
-								<stop offset="100%" stopColor={COLORS.blue} stopOpacity={0.3} />
+								<stop
+									offset="0%"
+									stopColor={CHART_COLORS[1]}
+									stopOpacity={0.9}
+								/>
+								<stop
+									offset="100%"
+									stopColor={CHART_COLORS[1]}
+									stopOpacity={0.3}
+								/>
 							</linearGradient>
 						</defs>
 						<CartesianGrid

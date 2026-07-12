@@ -11,7 +11,7 @@ import {
 	XAxis,
 	YAxis,
 } from "recharts";
-import { CHART_PROPS, COLORS } from "../../constants";
+import { CHART_COLORS, CHART_PROPS, COLORS } from "../../constants";
 import { formatCompactNumber } from "../../lib/chart-utils";
 import { getTooltipStyles } from "./chart-utils";
 
@@ -28,15 +28,15 @@ interface ModelTokenSpeedChartProps {
 	height?: number;
 }
 
-// Model-based color palette
+// Model-based color palette (grayscale — decorative per-model identity, not status)
 const MODEL_COLORS: Record<string, string> = {
-	"claude-3.5-sonnet": COLORS.purple,
+	"claude-3.5-sonnet": CHART_COLORS[2],
 	"claude-3.5-haiku": COLORS.success,
-	"claude-3-opus": COLORS.blue,
-	"claude-opus-4": COLORS.pink,
-	"claude-opus-4.1": COLORS.indigo,
-	"claude-sonnet-4": COLORS.cyan,
-	"claude-sonnet-4.5": COLORS.purple,
+	"claude-3-opus": CHART_COLORS[1],
+	"claude-opus-4": CHART_COLORS[3],
+	"claude-opus-4.1": CHART_COLORS[4],
+	"claude-sonnet-4": CHART_COLORS[0],
+	"claude-sonnet-4.5": CHART_COLORS[2],
 };
 
 function getModelColor(model: string): string {

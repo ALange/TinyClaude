@@ -76,6 +76,19 @@ export function BasePieChart({
 	const sortedData = data
 		? [...data].sort((a, b) => Number(b[dataKey]) - Number(a[dataKey]))
 		: [];
+	// Reverse the ramp for slice assignment: the largest slice (index 0, sorted
+	// above) gets the darkest step instead of the near-white lightest one, so it
+	// never becomes low-contrast/near-invisible against a light background.
+	const sliceColors = [...colors].reverse();
+	// Bare recharts labels only show the raw value; render "name: NN%" so a
+	// slice is identifiable without cross-referencing an (often hidden) legend.
+	const pieLabel = renderLabel
+		? // biome-ignore lint/suspicious/noExplicitAny: recharts label render props aren't fully typed for custom formatters
+			(props: any) => {
+				const percent = typeof props.percent === "number" ? props.percent : 0;
+				return `${props.name}: ${(percent * 100).toFixed(0)}%`;
+			}
+		: false;
 
 	return (
 		<ChartContainer
@@ -98,13 +111,13 @@ export function BasePieChart({
 						dataKey={dataKey}
 						nameKey={nameKey}
 						animationDuration={animationDuration}
-						label={renderLabel}
+						label={pieLabel}
 						onClick={onPieClick}
 					>
 						{sortedData.map((entry, index) => (
 							<Cell
 								key={`cell-${entry[nameKey]}`}
-								fill={colors[index % colors.length]}
+								fill={sliceColors[index % sliceColors.length]}
 							/>
 						))}
 					</Pie>

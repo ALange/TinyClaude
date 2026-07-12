@@ -388,7 +388,7 @@ export function MainMetricsChart({
 									loading={loading}
 									height="large"
 									color={
-										viewMode === "cumulative" ? COLORS.purple : COLORS.primary
+										viewMode === "cumulative" ? CHART_COLORS[2] : COLORS.primary
 									}
 									strokeWidth={viewMode === "cumulative" ? 3 : 2}
 									xAxisAngle={
@@ -617,12 +617,12 @@ export function TokenUsageBreakdown({
 										width: `${item.percentage}%`,
 										backgroundColor:
 											index === 0
-												? COLORS.blue
+												? CHART_COLORS[1]
 												: index === 1
 													? COLORS.success
 													: index === 2
-														? COLORS.warning
-														: COLORS.purple,
+														? CHART_COLORS[3]
+														: CHART_COLORS[2],
 									}}
 								/>
 							</div>
@@ -733,28 +733,29 @@ export function CumulativeGrowthChart({ data }: CumulativeGrowthChartProps) {
 					>
 						<defs>
 							<linearGradient id="colorTokens" x1="0" y1="0" x2="0" y2="1">
-								<stop offset="0%" stopColor={COLORS.blue} stopOpacity={0.9} />
-								<stop offset="100%" stopColor={COLORS.blue} stopOpacity={0.1} />
-							</linearGradient>
-							<linearGradient id="colorCost" x1="0" y1="0" x2="0" y2="1">
 								<stop
 									offset="0%"
-									stopColor={COLORS.warning}
+									stopColor={CHART_COLORS[1]}
 									stopOpacity={0.9}
 								/>
 								<stop
 									offset="100%"
-									stopColor={COLORS.warning}
+									stopColor={CHART_COLORS[1]}
 									stopOpacity={0.1}
 								/>
 							</linearGradient>
-							<filter id="glow">
-								<feGaussianBlur stdDeviation="4" result="coloredBlur" />
-								<feMerge>
-									<feMergeNode in="coloredBlur" />
-									<feMergeNode in="SourceGraphic" />
-								</feMerge>
-							</filter>
+							<linearGradient id="colorCost" x1="0" y1="0" x2="0" y2="1">
+								<stop
+									offset="0%"
+									stopColor={CHART_COLORS[3]}
+									stopOpacity={0.9}
+								/>
+								<stop
+									offset="100%"
+									stopColor={CHART_COLORS[3]}
+									stopOpacity={0.1}
+								/>
+							</linearGradient>
 						</defs>
 						<CartesianGrid
 							strokeDasharray={CHART_PROPS.strokeDasharray}
@@ -764,14 +765,14 @@ export function CumulativeGrowthChart({ data }: CumulativeGrowthChartProps) {
 						<YAxis
 							yAxisId="tokens"
 							className="text-xs"
-							stroke={COLORS.blue}
+							stroke={CHART_COLORS[1]}
 							tickFormatter={formatCompactNumber}
 						/>
 						<YAxis
 							yAxisId="cost"
 							orientation="right"
 							className="text-xs"
-							stroke={COLORS.warning}
+							stroke={CHART_COLORS[3]}
 							tickFormatter={formatCompactCurrency}
 						/>
 						<Tooltip
@@ -798,22 +799,20 @@ export function CumulativeGrowthChart({ data }: CumulativeGrowthChartProps) {
 							yAxisId="tokens"
 							type="monotone"
 							dataKey="tokens"
-							stroke={COLORS.blue}
+							stroke={CHART_COLORS[1]}
 							strokeWidth={3}
 							fillOpacity={1}
 							fill="url(#colorTokens)"
-							filter="url(#glow)"
 							name="Total Tokens"
 						/>
 						<Area
 							yAxisId="cost"
 							type="monotone"
 							dataKey="cost"
-							stroke={COLORS.warning}
+							stroke={CHART_COLORS[3]}
 							strokeWidth={3}
 							fillOpacity={1}
 							fill="url(#colorCost)"
-							filter="url(#glow)"
 							name="Total Cost"
 						/>
 					</AreaChart>
@@ -854,20 +853,20 @@ export function CumulativeTokenComposition({
 											width: `${width}%`,
 											background: `linear-gradient(135deg, ${
 												index === 0
-													? COLORS.blue
+													? CHART_COLORS[1]
 													: index === 1
 														? COLORS.success
 														: index === 2
-															? COLORS.warning
-															: COLORS.purple
+															? CHART_COLORS[3]
+															: CHART_COLORS[2]
 											} 0%, ${
 												index === 0
-													? COLORS.purple
+													? CHART_COLORS[2]
 													: index === 1
-														? COLORS.blue
+														? CHART_COLORS[1]
 														: index === 2
 															? COLORS.primary
-															: COLORS.warning
+															: CHART_COLORS[3]
 											} 100%)`,
 										}}
 									>
@@ -891,12 +890,12 @@ export function CumulativeTokenComposition({
 									style={{
 										background:
 											index === 0
-												? COLORS.blue
+												? CHART_COLORS[1]
 												: index === 1
 													? COLORS.success
 													: index === 2
-														? COLORS.warning
-														: COLORS.purple,
+														? CHART_COLORS[3]
+														: CHART_COLORS[2],
 									}}
 								/>
 								<div>
