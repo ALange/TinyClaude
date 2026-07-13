@@ -9,15 +9,15 @@ A load-balancing proxy for the Claude API — distributes requests across multip
 
 ```bash
 # via bun (recommended)
-bun install -g @adamlangepl/alpl-tinyclaude
+bun install -g @adamlangepl/tc-proxy
 tinyclaude
 
 # via npm (Linux x86_64)
-npm install -g @adamlangepl/alpl-tinyclaude
+npm install -g @adamlangepl/tc-proxy
 tinyclaude
 
 # no install — npx/bunx
-npx @adamlangepl/alpl-tinyclaude@latest
+npx @adamlangepl/tc-proxy@latest
 ```
 
 Pre-compiled binaries for all platforms are on the [Releases page](https://github.com/ALange/TinyClaude/releases/latest); building from source is covered in [Getting Started](docs/index.md).

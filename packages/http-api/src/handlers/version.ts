@@ -30,7 +30,7 @@ export function createVersionCheckHandler() {
 
 			// Fetch latest version from npm registry
 			const response = await fetch(
-				"https://registry.npmjs.org/@adamlangepl%2falpl-tinyclaude/latest",
+				"https://registry.npmjs.org/@adamlangepl%2ftc-proxy/latest",
 			);
 
 			if (!response.ok) {

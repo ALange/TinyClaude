@@ -426,7 +426,7 @@ echo "✅ API keys generated for deployment"
 FROM node:18-alpine
 
 # Install tinyclaude
-RUN npm install -g @adamlangepl/alpl-tinyclaude
+RUN npm install -g @adamlangepl/tc-proxy
 
 # Generate API key during build
 RUN tinyclaude --generate-api-key "docker-container" | grep "Key:" | awk '{print $2}' > /app/api-key

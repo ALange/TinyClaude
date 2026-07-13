@@ -98,15 +98,15 @@ cp ~/.config/tinyclaude/tinyclaude.db ~/.config/tinyclaude/tinyclaude.db.backup
 
 ```bash
 # Using npm
-npm update @adamlangepl/alpl-tinyclaude
+npm update @adamlangepl/tc-proxy
 
 # Using bun
-bun update @adamlangepl/alpl-tinyclaude
+bun update @adamlangepl/tc-proxy
 
 # Or install fresh
-npm install -g @adamlangepl/alpl-tinyclaude@latest
+npm install -g @adamlangepl/tc-proxy@latest
 # or
-bun install -g @adamlangepl/alpl-tinyclaude@latest
+bun install -g @adamlangepl/tc-proxy@latest
 ```
 
 ### 3. Start the Application
