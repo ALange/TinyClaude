@@ -178,6 +178,17 @@ export const AnalyticsTab = React.memo(() => {
 		}));
 	}, [analytics?.tokenBreakdown, analytics?.totals.totalTokens]);
 
+	// Memoize compression comparison calculation
+	const compressionComparison = useMemo(() => {
+		const saved =
+			analytics?.tokenBreakdown?.estimatedTokensSavedByCompression ?? 0;
+		const actual = analytics?.tokenBreakdown?.inputTokens ?? 0;
+		return { actual, original: actual + saved, saved };
+	}, [
+		analytics?.tokenBreakdown?.estimatedTokensSavedByCompression,
+		analytics?.tokenBreakdown?.inputTokens,
+	]);
+
 	// Use real model performance data from backend with filters
 	const _modelPerformance =
 		analytics?.modelPerformance
@@ -269,6 +280,7 @@ export const AnalyticsTab = React.memo(() => {
 						<TokenUsageBreakdown
 							tokenBreakdown={tokenBreakdown}
 							timeRange={timeRange}
+							compressionComparison={compressionComparison}
 						/>
 					</div>
 

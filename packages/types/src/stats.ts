@@ -119,6 +119,7 @@ export interface TokenBreakdown {
 	cacheReadInputTokens: number;
 	cacheCreationInputTokens: number;
 	outputTokens: number;
+	estimatedTokensSavedByCompression?: number;
 }
 
 export interface ModelPerformance {

@@ -112,6 +112,21 @@ export function createAnalyticsHandler(context: APIContext) {
 			`,
 				[sevenDayStart, sevenDayStart, thirtyDayStart],
 			);
+
+			// Compression savings: sum of tokens_before - tokens_after for non-cache-hit events
+			const compressionSavingsResult = await db.get<{
+				estimated_tokens_saved: number | null;
+			}>(
+				`
+				SELECT
+					SUM(CASE WHEN ce.cache_hit = 0 THEN COALESCE(ce.tokens_before, 0) - COALESCE(ce.tokens_after, 0) ELSE 0 END) as estimated_tokens_saved
+				FROM compression_events ce
+				JOIN requests r ON r.id = ce.request_id
+				WHERE ${whereClause}
+			`,
+				queryParams,
+			);
+
 			const planCost7d = Number(burnRateResult?.plan_cost_7d) || 0;
 			const apiCost7d = Number(burnRateResult?.api_cost_7d) || 0;
 			const planCost30d = Number(burnRateResult?.plan_cost_30d) || 0;
@@ -551,6 +566,8 @@ export function createAnalyticsHandler(context: APIContext) {
 					cacheCreationInputTokens:
 						Number(consolidatedResult?.cache_creation_input_tokens) || 0,
 					outputTokens: Number(consolidatedResult?.output_tokens) || 0,
+					estimatedTokensSavedByCompression:
+						Number(compressionSavingsResult?.estimated_tokens_saved) || 0,
 				},
 				modelDistribution,
 				accountPerformance,
