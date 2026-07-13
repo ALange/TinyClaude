@@ -180,6 +180,22 @@ export class ContentRouter {
 
 		// Skip short content
 		if (!content || content.length < this.config.minContentChars) {
+			const minified = this._tryMinifyJSON(content);
+			if (minified !== null && minified !== content) {
+				return {
+					compressed: minified,
+					original: content,
+					contentType: ContentType.JSON,
+					detectionConfidence: 1.0,
+					compressorUsed: "JSONMinifier",
+					compressionRatio: minified.length / content.length,
+					tokensBefore,
+					tokensAfter: Math.ceil(minified.length / 4),
+					wasMixed: false,
+					subResults: [],
+					strategy: "json_minify_short",
+				};
+			}
 			return this._passthroughResult(
 				content,
 				ContentType.UNKNOWN,
@@ -386,5 +402,22 @@ export class ContentRouter {
 			subResults: [],
 			strategy: `passthrough(${reason})`,
 		};
+	}
+
+	// ── JSON minification helper ──────────────────────────────────────────
+
+	/**
+	 * Losslessly minify content that is itself valid top-level JSON. Mirrors
+	 * detectContentType's own {/[ guard so plain text/number-like content is
+	 * never misclassified. Returns null if content isn't parseable JSON.
+	 */
+	private _tryMinifyJSON(content: string): string | null {
+		const trimmed = content.trim();
+		if (!(trimmed.startsWith("{") || trimmed.startsWith("["))) return null;
+		try {
+			return JSON.stringify(JSON.parse(trimmed));
+		} catch {
+			return null;
+		}
 	}
 }
