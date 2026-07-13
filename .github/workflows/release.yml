@@ -30,10 +30,6 @@ jobs:
         working-directory: apps/cli
         run: bun run build-multi-arch.ts
 
-      - name: Publish to npm
-        working-directory: apps/cli
-        run: npm publish --access public
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         env:
@@ -41,3 +37,7 @@ jobs:
         with:
           files: apps/cli/dist/tinyclaude-*
           generate_release_notes: true
+
+      - name: Publish to npm
+        working-directory: apps/cli
+        run: npm publish --access public
