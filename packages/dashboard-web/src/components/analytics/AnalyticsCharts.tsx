@@ -1,5 +1,10 @@
 import type { TimePoint } from "@tinyclaude/types";
-import { formatCost, formatNumber, formatTokens } from "@tinyclaude/ui-common";
+import {
+	formatCost,
+	formatNumber,
+	formatPercentage,
+	formatTokens,
+} from "@tinyclaude/ui-common";
 import { useState } from "react";
 import {
 	Area,
@@ -583,11 +588,13 @@ interface TokenBreakdownItem {
 interface TokenUsageBreakdownProps {
 	tokenBreakdown: TokenBreakdownItem[];
 	timeRange: TimeRange;
+	compressionComparison: { actual: number; original: number; saved: number };
 }
 
 export function TokenUsageBreakdown({
 	tokenBreakdown,
 	timeRange,
+	compressionComparison,
 }: TokenUsageBreakdownProps) {
 	return (
 		<Card>
@@ -639,6 +646,52 @@ export function TokenUsageBreakdown({
 							</span>
 						</div>
 					</div>
+					{compressionComparison.original > 0 && (
+						<div className="mt-4 pt-4 border-t border-dashed">
+							<div className="flex items-center justify-between mb-2">
+								<div className="flex items-center gap-1.5">
+									<span className="text-sm font-medium">Compressed Input</span>
+									<span
+										className="text-xs text-muted-foreground cursor-help"
+										title="Estimated from chars/4 on compressed tool-result blocks only — does not include the system prompt, other messages, or uncompressed content."
+									>
+										(est.)
+									</span>
+								</div>
+								<div className="flex items-center gap-2">
+									<span className="text-sm text-muted-foreground">
+										{formatTokens(compressionComparison.actual)} /{" "}
+										{formatTokens(compressionComparison.original)} tokens
+									</span>
+									{compressionComparison.saved > 0 && (
+										<Badge variant="outline">
+											{formatPercentage(
+												(compressionComparison.saved /
+													compressionComparison.original) *
+													100,
+												0,
+											)}{" "}
+											saved
+										</Badge>
+									)}
+								</div>
+							</div>
+							<div className="w-full bg-muted h-2">
+								<div
+									className="h-2 transition-all"
+									style={{
+										width: `${Math.min(
+											100,
+											(compressionComparison.actual /
+												compressionComparison.original) *
+												100,
+										)}%`,
+										backgroundColor: CHART_COLORS[0],
+									}}
+								/>
+							</div>
+						</div>
+					)}
 				</div>
 			</CardContent>
 		</Card>
