@@ -12,11 +12,12 @@
 		"url": "https://github.com/ALange/TinyClaude/issues"
 	},
 	"bin": {
-		"tinyclaude": "dist/tinyclaude"
+		"tinyclaude": "bin/tinyclaude.js"
 	},
 	"type": "module",
 	"scripts": {
 		"dev": "bun run src/main.ts",
+		"postinstall": "node scripts/postinstall.js",
 		"build": "mkdir -p dist && bun -e \"const fs=require('fs'); if (!fs.existsSync('../../packages/database/src/inline-vacuum-worker.ts')) { fs.writeFileSync('../../packages/database/src/inline-vacuum-worker.ts', 'export const EMBEDDED_VACUUM_WORKER_CODE = \\\"\\\";'); }\" && bun -e \"const fs=require('fs'); if (!fs.existsSync('../../packages/database/src/inline-incremental-vacuum-worker.ts')) { fs.writeFileSync('../../packages/database/src/inline-incremental-vacuum-worker.ts', 'export const EMBEDDED_INCREMENTAL_VACUUM_WORKER_CODE = \\\"\\\";'); }\" && bun -e \"const fs=require('fs'); if (!fs.existsSync('../../packages/database/src/inline-integrity-check-worker.ts')) { fs.writeFileSync('../../packages/database/src/inline-integrity-check-worker.ts', 'export const EMBEDDED_INTEGRITY_CHECK_WORKER_CODE = \\\"\\\";'); }\" && bun build ../../packages/database/src/vacuum-worker.ts --outfile dist/vacuum-worker.js --target=bun --minify && bun -e \"const fs=require('fs'); const code=fs.readFileSync('dist/vacuum-worker.js','utf8'); const encoded=Buffer.from(code).toString('base64'); fs.writeFileSync('../../packages/database/src/inline-vacuum-worker.ts', 'export const EMBEDDED_VACUUM_WORKER_CODE = \\\"' + encoded + '\\\";');\" && bun build ../../packages/database/src/incremental-vacuum-worker.ts --outfile dist/incremental-vacuum-worker.js --target=bun --minify && bun -e \"const fs=require('fs'); const code=fs.readFileSync('dist/incremental-vacuum-worker.js','utf8'); const encoded=Buffer.from(code).toString('base64'); fs.writeFileSync('../../packages/database/src/inline-incremental-vacuum-worker.ts', 'export const EMBEDDED_INCREMENTAL_VACUUM_WORKER_CODE = \\\"' + encoded + '\\\";');\" && bun build ../../packages/database/src/integrity-check-worker.ts --outfile dist/integrity-check-worker.js --target=bun --minify && bun -e \"const fs=require('fs'); const code=fs.readFileSync('dist/integrity-check-worker.js','utf8'); const encoded=Buffer.from(code).toString('base64'); fs.writeFileSync('../../packages/database/src/inline-integrity-check-worker.ts', 'export const EMBEDDED_INTEGRITY_CHECK_WORKER_CODE = \\\"' + encoded + '\\\";');\" && rm -f dist/tinyclaude && bun build src/main.ts --compile --outfile dist/tinyclaude --target=bun --minify --define __TINYCLAUDE_VERSION__='\\\"'$(node -p \"require('./package.json').version\")'\\\"' && rm -f dist/vacuum-worker.js dist/incremental-vacuum-worker.js dist/integrity-check-worker.js",
 		"build:multi": "bun run build-multi-arch.ts",
 		"build:linux-amd64": "bun run build && bun build src/main.ts --compile --outfile dist/tinyclaude-linux-amd64 --target=bun-linux-amd64 --minify",
@@ -24,8 +25,7 @@
 		"build:macos-x86_64": "bun run build && bun build src/main.ts --compile --outfile dist/tinyclaude-macos-x86_64 --target=bun-darwin-x64 --minify",
 		"build:macos-arm64": "bun run build && bun build src/main.ts --compile --outfile dist/tinyclaude-macos-arm64 --target=bun-darwin-arm64 --minify",
 		"build:windows-x64": "bun run build && bun build src/main.ts --compile --outfile dist/tinyclaude-windows-x64.exe --target=bun-windows-x64 --minify",
-		"prepublishOnly": "cp ../../README.md . && bun run --cwd ../.. build:dashboard && bun run build && jq 'del(.dependencies[\"@tinyclaude/cli-commands\", \"@tinyclaude/config\", \"@tinyclaude/core\", \"@tinyclaude/core-di\", \"@tinyclaude/database\", \"@tinyclaude/logger\", \"@tinyclaude/server\"])' package.json > package.json.tmp && mv package.json.tmp package.json",
-		"postpublish": "chmod +x dist/tinyclaude"
+		"prepublishOnly": "cp ../../README.md . && jq 'del(.dependencies[\"@tinyclaude/cli-commands\", \"@tinyclaude/config\", \"@tinyclaude/core\", \"@tinyclaude/core-di\", \"@tinyclaude/database\", \"@tinyclaude/logger\", \"@tinyclaude/server\"])' package.json > package.json.tmp && mv package.json.tmp package.json"
 	},
 	"engines": {
 		"node": ">=18.0.0"
@@ -37,7 +37,8 @@
 		"dotenv": "^17.4.0"
 	},
 	"files": [
-		"dist/tinyclaude",
+		"bin/tinyclaude.js",
+		"scripts/postinstall.js",
 		"README.md"
 	],
 	"keywords": [
