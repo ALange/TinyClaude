@@ -8,67 +8,48 @@
 
 // ── Imports (local — needed in this file body) ──────────────────────────────
 
-import {
-	ContentType,
-	detectContentType,
-} from "./content-detector";
-import type { DetectionResult } from "./content-detector";
-
+import type { JSONCompressorConfig } from "./compressors/json-compressor";
 import { JSONCompressor } from "./compressors/json-compressor";
-import type {
-	JSONCompressorConfig,
-	JSONCompressionResult,
-} from "./compressors/json-compressor";
-
+import type { LogCompressorConfig } from "./compressors/log-compressor";
 import { LogCompressor } from "./compressors/log-compressor";
-import type {
-	LogCompressorConfig,
-	LogCompressionResult,
-} from "./compressors/log-compressor";
-
+import type { SearchCompressorConfig } from "./compressors/search-compressor";
 import { SearchCompressor } from "./compressors/search-compressor";
-import type {
-	SearchCompressorConfig,
-	SearchCompressionResult,
-} from "./compressors/search-compressor";
-
+import type { SimpleCompressorConfig } from "./compressors/simple-compressor";
 import { SimpleCompressor } from "./compressors/simple-compressor";
-import type {
-	SimpleCompressorConfig,
-	SimpleCompressionResult,
-} from "./compressors/simple-compressor";
+import type { DetectionResult } from "./content-detector";
+import { ContentType, detectContentType } from "./content-detector";
 
 // ── Re-exports ───────────────────────────────────────────────────────────────
 
-export { ContentType, detectContentType } from "./content-detector";
-export type { DetectionResult } from "./content-detector";
-export {
-	StructureMask,
-	maskToSpans,
-	applyMaskToText,
-	computeEntropyMask,
-} from "./structure-mask";
-export type { MaskSpan } from "./structure-mask";
+export type {
+	JSONCompressionResult,
+	JSONCompressorConfig,
+} from "./compressors/json-compressor";
 export { JSONCompressor } from "./compressors/json-compressor";
 export type {
-	JSONCompressorConfig,
-	JSONCompressionResult,
-} from "./compressors/json-compressor";
+	LogCompressionResult,
+	LogCompressorConfig,
+} from "./compressors/log-compressor";
 export { LogCompressor } from "./compressors/log-compressor";
 export type {
-	LogCompressorConfig,
-	LogCompressionResult,
-} from "./compressors/log-compressor";
+	SearchCompressionResult,
+	SearchCompressorConfig,
+} from "./compressors/search-compressor";
 export { SearchCompressor } from "./compressors/search-compressor";
 export type {
-	SearchCompressorConfig,
-	SearchCompressionResult,
-} from "./compressors/search-compressor";
-export { SimpleCompressor } from "./compressors/simple-compressor";
-export type {
-	SimpleCompressorConfig,
 	SimpleCompressionResult,
+	SimpleCompressorConfig,
 } from "./compressors/simple-compressor";
+export { SimpleCompressor } from "./compressors/simple-compressor";
+export type { DetectionResult } from "./content-detector";
+export { ContentType, detectContentType } from "./content-detector";
+export type { MaskSpan } from "./structure-mask";
+export {
+	applyMaskToText,
+	computeEntropyMask,
+	maskToSpans,
+	StructureMask,
+} from "./structure-mask";
 
 // ── Config ───────────────────────────────────────────────────────────────────
 
@@ -158,12 +139,8 @@ export class ContentRouter {
 		this.config = { ...DEFAULT_CONFIG, ...config };
 		this.jsonCompressor = new JSONCompressor(this.config.jsonCompressor);
 		this.logCompressor = new LogCompressor(this.config.logCompressor);
-		this.searchCompressor = new SearchCompressor(
-			this.config.searchCompressor,
-		);
-		this.simpleCompressor = new SimpleCompressor(
-			this.config.simpleCompressor,
-		);
+		this.searchCompressor = new SearchCompressor(this.config.searchCompressor);
+		this.simpleCompressor = new SimpleCompressor(this.config.simpleCompressor);
 	}
 
 	// ── Main entry point ──────────────────────────────────────────────────
@@ -180,6 +157,22 @@ export class ContentRouter {
 
 		// Skip short content
 		if (!content || content.length < this.config.minContentChars) {
+			const minified = this._tryMinifyJSON(content);
+			if (minified !== null && minified !== content) {
+				return {
+					compressed: minified,
+					original: content,
+					contentType: ContentType.JSON,
+					detectionConfidence: 1.0,
+					compressorUsed: "JSONMinifier",
+					compressionRatio: minified.length / content.length,
+					tokensBefore,
+					tokensAfter: Math.ceil(minified.length / 4),
+					wasMixed: false,
+					subResults: [],
+					strategy: "json_minify_short",
+				};
+			}
 			return this._passthroughResult(
 				content,
 				ContentType.UNKNOWN,
@@ -297,7 +290,7 @@ export class ContentRouter {
 	private _isMixed(content: string): boolean {
 		const indicators = {
 			hasCodeFences: /^```/m.test(content),
-			hasJSONBlocks: /^\s*[\[{]/m.test(content),
+			hasJSONBlocks: /^\s*[[{]/m.test(content),
 			hasSearchResults: /^\S+:\d+:/m.test(content),
 		};
 		return Object.values(indicators).filter(Boolean).length >= 2;
@@ -386,5 +379,22 @@ export class ContentRouter {
 			subResults: [],
 			strategy: `passthrough(${reason})`,
 		};
+	}
+
+	// ── JSON minification helper ──────────────────────────────────────────
+
+	/**
+	 * Losslessly minify content that is itself valid top-level JSON. Mirrors
+	 * detectContentType's own {/[ guard so plain text/number-like content is
+	 * never misclassified. Returns null if content isn't parseable JSON.
+	 */
+	private _tryMinifyJSON(content: string): string | null {
+		const trimmed = content.trim();
+		if (!(trimmed.startsWith("{") || trimmed.startsWith("["))) return null;
+		try {
+			return JSON.stringify(JSON.parse(trimmed));
+		} catch {
+			return null;
+		}
 	}
 }
