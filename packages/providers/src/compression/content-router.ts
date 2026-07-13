@@ -8,48 +8,67 @@
 
 // ── Imports (local — needed in this file body) ──────────────────────────────
 
-import type { JSONCompressorConfig } from "./compressors/json-compressor";
-import { JSONCompressor } from "./compressors/json-compressor";
-import type { LogCompressorConfig } from "./compressors/log-compressor";
-import { LogCompressor } from "./compressors/log-compressor";
-import type { SearchCompressorConfig } from "./compressors/search-compressor";
-import { SearchCompressor } from "./compressors/search-compressor";
-import type { SimpleCompressorConfig } from "./compressors/simple-compressor";
-import { SimpleCompressor } from "./compressors/simple-compressor";
+import {
+	ContentType,
+	detectContentType,
+} from "./content-detector";
 import type { DetectionResult } from "./content-detector";
-import { ContentType, detectContentType } from "./content-detector";
+
+import { JSONCompressor } from "./compressors/json-compressor";
+import type {
+	JSONCompressorConfig,
+	JSONCompressionResult,
+} from "./compressors/json-compressor";
+
+import { LogCompressor } from "./compressors/log-compressor";
+import type {
+	LogCompressorConfig,
+	LogCompressionResult,
+} from "./compressors/log-compressor";
+
+import { SearchCompressor } from "./compressors/search-compressor";
+import type {
+	SearchCompressorConfig,
+	SearchCompressionResult,
+} from "./compressors/search-compressor";
+
+import { SimpleCompressor } from "./compressors/simple-compressor";
+import type {
+	SimpleCompressorConfig,
+	SimpleCompressionResult,
+} from "./compressors/simple-compressor";
 
 // ── Re-exports ───────────────────────────────────────────────────────────────
 
-export type {
-	JSONCompressionResult,
-	JSONCompressorConfig,
-} from "./compressors/json-compressor";
-export { JSONCompressor } from "./compressors/json-compressor";
-export type {
-	LogCompressionResult,
-	LogCompressorConfig,
-} from "./compressors/log-compressor";
-export { LogCompressor } from "./compressors/log-compressor";
-export type {
-	SearchCompressionResult,
-	SearchCompressorConfig,
-} from "./compressors/search-compressor";
-export { SearchCompressor } from "./compressors/search-compressor";
-export type {
-	SimpleCompressionResult,
-	SimpleCompressorConfig,
-} from "./compressors/simple-compressor";
-export { SimpleCompressor } from "./compressors/simple-compressor";
-export type { DetectionResult } from "./content-detector";
 export { ContentType, detectContentType } from "./content-detector";
-export type { MaskSpan } from "./structure-mask";
+export type { DetectionResult } from "./content-detector";
 export {
+	StructureMask,
+	maskToSpans,
 	applyMaskToText,
 	computeEntropyMask,
-	maskToSpans,
-	StructureMask,
 } from "./structure-mask";
+export type { MaskSpan } from "./structure-mask";
+export { JSONCompressor } from "./compressors/json-compressor";
+export type {
+	JSONCompressorConfig,
+	JSONCompressionResult,
+} from "./compressors/json-compressor";
+export { LogCompressor } from "./compressors/log-compressor";
+export type {
+	LogCompressorConfig,
+	LogCompressionResult,
+} from "./compressors/log-compressor";
+export { SearchCompressor } from "./compressors/search-compressor";
+export type {
+	SearchCompressorConfig,
+	SearchCompressionResult,
+} from "./compressors/search-compressor";
+export { SimpleCompressor } from "./compressors/simple-compressor";
+export type {
+	SimpleCompressorConfig,
+	SimpleCompressionResult,
+} from "./compressors/simple-compressor";
 
 // ── Config ───────────────────────────────────────────────────────────────────
 
@@ -139,8 +158,12 @@ export class ContentRouter {
 		this.config = { ...DEFAULT_CONFIG, ...config };
 		this.jsonCompressor = new JSONCompressor(this.config.jsonCompressor);
 		this.logCompressor = new LogCompressor(this.config.logCompressor);
-		this.searchCompressor = new SearchCompressor(this.config.searchCompressor);
-		this.simpleCompressor = new SimpleCompressor(this.config.simpleCompressor);
+		this.searchCompressor = new SearchCompressor(
+			this.config.searchCompressor,
+		);
+		this.simpleCompressor = new SimpleCompressor(
+			this.config.simpleCompressor,
+		);
 	}
 
 	// ── Main entry point ──────────────────────────────────────────────────
@@ -290,7 +313,7 @@ export class ContentRouter {
 	private _isMixed(content: string): boolean {
 		const indicators = {
 			hasCodeFences: /^```/m.test(content),
-			hasJSONBlocks: /^\s*[[{]/m.test(content),
+			hasJSONBlocks: /^\s*[\[{]/m.test(content),
 			hasSearchResults: /^\S+:\d+:/m.test(content),
 		};
 		return Object.values(indicators).filter(Boolean).length >= 2;
