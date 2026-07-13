@@ -7,11 +7,15 @@
  * hashes to their compressed versions.
  */
 
+import { createHash } from "node:crypto";
+
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface CacheEntry {
 	compressed: string;
 	tokensSaved: number;
+	/** Length of the original content that produced this entry, or -1 if not provided. */
+	originalLength: number;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -92,7 +96,7 @@ function _swapToolResultContent(
 }
 
 /**
- * Compute a short content hash (first 16 hex chars of MD5-style hash).
+ * Compute a short content hash (first 32 hex chars of a sha256 digest).
  */
 function _contentHash(content: string | unknown[]): string {
 	let raw: string;
@@ -101,13 +105,10 @@ function _contentHash(content: string | unknown[]): string {
 	} else {
 		raw = String(content);
 	}
-	return _md5Hex(raw).slice(0, 16);
+	return _contentHashHex(raw);
 }
 
-function sortedStringifyReplacer(
-	_key: string,
-	value: unknown,
-): unknown {
+function sortedStringifyReplacer(_key: string, value: unknown): unknown {
 	if (typeof value === "object" && value !== null && !Array.isArray(value)) {
 		const sorted: Record<string, unknown> = {};
 		const obj = value as Record<string, unknown>;
@@ -119,30 +120,9 @@ function sortedStringifyReplacer(
 	return value;
 }
 
-/** Simple MD5-style hash for content addressing (not cryptographic). */
-function _md5Hex(input: string): string {
-	let hash = 0;
-	for (let i = 0; i < input.length; i++) {
-		const chr = input.charCodeAt(i);
-		hash = ((hash << 5) - hash + chr) | 0; // eslint-disable-line no-bitwise
-	}
-	// Generate 32 hex chars from the 32-bit hash (deterministic but not
-	// collision-resistant; sufficient for cache keying).
-	const bytes = new Uint8Array(4);
-	bytes[0] = (hash >>> 24) & 0xff;
-	bytes[1] = (hash >>> 16) & 0xff;
-	bytes[2] = (hash >>> 8) & 0xff;
-	bytes[3] = hash & 0xff;
-	let hex = "";
-	for (const b of bytes) {
-		hex += b.toString(16).padStart(2, "0");
-	}
-	// Extend to 16 chars by mixing in more bits
-	for (let i = 0; i < 12; i++) {
-		const c = input.charCodeAt(i % input.length) || 0;
-		hex += ((hash + c) & 0x0f).toString(16);
-	}
-	return hex.slice(0, 16);
+/** Cryptographic content hash for cache keying (collision-resistant). */
+function _contentHashHex(raw: string): string {
+	return createHash("sha256").update(raw, "utf8").digest("hex").slice(0, 32);
 }
 
 // ── CompressionCache ─────────────────────────────────────────────────────────
@@ -155,18 +135,30 @@ export class CompressionCache {
 	private _misses = 0;
 	private _totalTokensSaved = 0;
 
-	constructor(
-		public maxEntries: number = 10000,
-	) {}
+	constructor(public maxEntries: number = 10000) {}
 
 	// ── Public API ────────────────────────────────────────────────────────
 
 	/**
 	 * Retrieve compressed content by hash, refreshing LRU position on hit.
+	 *
+	 * If `expectedOriginalLength` is provided and the stored entry has a known
+	 * `originalLength` that doesn't match, the entry is refused (treated as a
+	 * miss) as a defense-in-depth guard against a residual hash collision —
+	 * without evicting the entry, since a mismatch is more likely a legitimate
+	 * content variation than an actual collision.
 	 */
-	getCompressed(hash: string): string | null {
+	getCompressed(hash: string, expectedOriginalLength?: number): string | null {
 		const entry = this._cache.get(hash);
 		if (entry === undefined) {
+			this._misses++;
+			return null;
+		}
+		if (
+			expectedOriginalLength !== undefined &&
+			entry.originalLength !== -1 &&
+			entry.originalLength !== expectedOriginalLength
+		) {
 			this._misses++;
 			return null;
 		}
@@ -180,18 +172,28 @@ export class CompressionCache {
 	/**
 	 * Store a compressed version keyed by content hash.
 	 * Evicts oldest entries when over capacity.
+	 *
+	 * `originalLength`, if provided, is stored alongside the entry so a later
+	 * `getCompressed` call can guard against serving the wrong content on a
+	 * residual hash collision. Omitted/undefined stores the sentinel -1,
+	 * meaning "no guard."
 	 */
 	storeCompressed(
 		hash: string,
 		compressed: string,
 		tokensSaved: number,
+		originalLength?: number,
 	): void {
 		if (this._cache.has(hash)) {
 			const old = this._cache.get(hash)!;
 			this._totalTokensSaved -= old.tokensSaved;
 			this._cache.delete(hash);
 		}
-		this._cache.set(hash, { compressed, tokensSaved });
+		this._cache.set(hash, {
+			compressed,
+			tokensSaved,
+			originalLength: originalLength ?? -1,
+		});
 		this._totalTokensSaved += tokensSaved;
 
 		// Evict oldest entries (Map preserves insertion order)
@@ -317,7 +319,7 @@ export class CompressionCache {
 				const content = _extractToolResultContent(msg);
 				if (content !== null) {
 					const h = _contentHash(content);
-					const compressed = this.getCompressed(h);
+					const compressed = this.getCompressed(h, content.length);
 					if (compressed !== null) {
 						result.push(_swapToolResultContent(msg, compressed));
 						continue;
@@ -356,10 +358,9 @@ export class CompressionCache {
 			const h = _contentHash(origContent);
 			const tokensSaved = Math.max(
 				0,
-				Math.floor(origContent.length / 4) -
-					Math.floor(compContent.length / 4),
+				Math.floor(origContent.length / 4) - Math.floor(compContent.length / 4),
 			);
-			this.storeCompressed(h, compContent, tokensSaved);
+			this.storeCompressed(h, compContent, tokensSaved, origContent.length);
 		}
 	}
 }

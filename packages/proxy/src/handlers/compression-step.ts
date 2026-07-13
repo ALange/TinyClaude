@@ -151,7 +151,7 @@ export function applyCompressionAndAlignment(
 		if (content === null) continue;
 
 		const hash = CompressionCache.contentHash(content);
-		const cached = ctx.compressionCache.getCompressed(hash);
+		const cached = ctx.compressionCache.getCompressed(hash, content.length);
 		const timestamp = Date.now();
 
 		if (cached !== null) {
@@ -178,7 +178,12 @@ export function applyCompressionAndAlignment(
 
 		const result = ctx.contentRouter.compress(content);
 		const tokensSaved = Math.max(0, result.tokensBefore - result.tokensAfter);
-		ctx.compressionCache.storeCompressed(hash, result.compressed, tokensSaved);
+		ctx.compressionCache.storeCompressed(
+			hash,
+			result.compressed,
+			tokensSaved,
+			content.length,
+		);
 
 		if (result.compressed !== content) {
 			newMessages[i] = swapToolResultContent(msg, result.compressed);
