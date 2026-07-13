@@ -55,11 +55,25 @@ function sleep(ms) {
 	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function downloadWithRetry(url) {
+class NotFoundError extends Error {
+	constructor(url, version) {
+		super(
+			`Download failed with HTTP status 404 Not Found for ${url}. ` +
+				`The release/asset for version ${version} may not exist yet. ` +
+				`Check https://github.com/ALange/TinyClaude/releases for available releases.`,
+		);
+		this.name = "NotFoundError";
+	}
+}
+
+async function downloadWithRetry(url, version) {
 	let lastError;
 	for (let attempt = 0; attempt <= RETRY_ATTEMPTS; attempt++) {
 		try {
 			const response = await fetch(url);
+			if (response.status === 404) {
+				throw new NotFoundError(url, version);
+			}
 			if (!response.ok) {
 				throw new Error(
 					`Download failed with HTTP status ${response.status} ${response.statusText} for ${url}`,
@@ -69,6 +83,9 @@ async function downloadWithRetry(url) {
 			return Buffer.from(arrayBuffer);
 		} catch (error) {
 			lastError = error;
+			if (error instanceof NotFoundError) {
+				throw error;
+			}
 			if (attempt < RETRY_ATTEMPTS) {
 				console.error(
 					`[postinstall] Download attempt ${attempt + 1} failed: ${error.message}. Retrying...`,
@@ -93,7 +110,7 @@ async function main() {
 	);
 	console.log(`[postinstall] ${url}`);
 
-	const bytes = await downloadWithRetry(url);
+	const bytes = await downloadWithRetry(url, version);
 
 	if (!bytes || bytes.length === 0) {
 		throw new Error(`Downloaded file for ${url} is empty.`);
