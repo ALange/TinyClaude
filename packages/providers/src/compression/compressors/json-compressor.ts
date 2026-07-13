@@ -65,13 +65,12 @@ export class JSONCompressor {
 		}
 
 		if (typeof parsed === "object" && parsed !== null) {
-			const compressed = this._compressObject(
-				parsed as Record<string, unknown>,
-			);
+			const obj = parsed as Record<string, unknown>;
+			const compressed = this._compressObject(obj);
 			return {
 				compressed: JSON.stringify(compressed),
-				originalItems: 1,
-				compressedItems: 1,
+				originalItems: Object.keys(obj).length,
+				compressedItems: Object.keys(compressed).length,
 				strategy: "object_preserve_keys",
 			};
 		}
@@ -87,7 +86,7 @@ export class JSONCompressor {
 
 	private _compressArray(
 		arr: unknown[],
-		originalContent: string,
+		_originalContent: string,
 	): JSONCompressionResult {
 		const totalItems = arr.length;
 
@@ -133,9 +132,7 @@ export class JSONCompressor {
 				} else if (typeof value === "string") {
 					result[key] = this._compressString(key, value);
 				} else if (typeof value === "object" && value !== null) {
-					result[key] = this._compressObject(
-						value as Record<string, unknown>,
-					);
+					result[key] = this._compressObject(value as Record<string, unknown>);
 				} else {
 					result[key] = value;
 				}
@@ -152,21 +149,32 @@ export class JSONCompressor {
 		}
 		if (typeof value === "object" && value !== null) {
 			if (Array.isArray(value)) {
-				return value.map((v) => this._compressValue(v));
+				return this._compressNestedArray(value);
 			}
 			return this._compressObject(value as Record<string, unknown>);
 		}
 		return value;
 	}
 
-	private _compressArrayValue(
-		key: string,
-		arr: unknown[],
-	): unknown[] {
-		if (arr.length <= 3) return arr;
-		// For arrays within objects, keep first 3 + last 2
-		const keep = [...arr.slice(0, 3), "...", ...arr.slice(-2)];
-		return keep;
+	/**
+	 * Shared nested-array policy: keep first 3 + last 2 (with a "..." marker
+	 * when truncated), recursively compressing each kept element via
+	 * _compressValue so preserveFields and size-bounding both apply
+	 * consistently everywhere a nested array is encountered.
+	 */
+	private _compressNestedArray(arr: unknown[]): unknown[] {
+		if (arr.length <= 3) {
+			return arr.map((v) => this._compressValue(v));
+		}
+		return [
+			...arr.slice(0, 3).map((v) => this._compressValue(v)),
+			"...",
+			...arr.slice(-2).map((v) => this._compressValue(v)),
+		];
+	}
+
+	private _compressArrayValue(_key: string, arr: unknown[]): unknown[] {
+		return this._compressNestedArray(arr);
 	}
 
 	private _compressString(key: string, value: string): string {
@@ -179,6 +187,7 @@ export class JSONCompressor {
 
 	private _truncateString(value: string): string {
 		if (value.length <= 50) return value;
+		if (this._isEmbeddedJSON(value)) return value;
 		const targetLen = Math.max(
 			30,
 			Math.floor(value.length * this.config.compressionRatio),
@@ -190,5 +199,28 @@ export class JSONCompressor {
 			"\n...[compressed]...\n" +
 			value.slice(-keepEnd)
 		);
+	}
+
+	/**
+	 * Detects whether a string value is itself parseable JSON (e.g. a
+	 * tool_result field that embeds a JSON-encoded sub-object as a string).
+	 * Blind text-truncation would slice through such a value and splice in
+	 * the "...[compressed]..." marker, corrupting it so a downstream
+	 * JSON.parse of that field's value would throw.
+	 */
+	private _isEmbeddedJSON(value: string): boolean {
+		const trimmed = value.trim();
+		if (trimmed.length < 2) return false;
+		const first = trimmed[0];
+		const last = trimmed[trimmed.length - 1];
+		const looksLikeObject = first === "{" && last === "}";
+		const looksLikeArray = first === "[" && last === "]";
+		if (!looksLikeObject && !looksLikeArray) return false;
+		try {
+			JSON.parse(trimmed);
+			return true;
+		} catch {
+			return false;
+		}
 	}
 }
