@@ -179,6 +179,10 @@ async function main() {
 	// Create dist directory
 	mkdirSync("dist", { recursive: true });
 
+	// Build dashboard assets so they can be embedded into every platform binary
+	console.log("📊 Building dashboard...");
+	execSync("bun run --cwd ../.. build:dashboard", { stdio: "inherit" });
+
 	// Build worker first
 	await buildWorker();
 
