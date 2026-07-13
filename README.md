@@ -12,7 +12,7 @@ A load-balancing proxy for the Claude API — distributes requests across multip
 bun install -g @adamlangepl/tc-proxy
 tinyclaude
 
-# via npm (Linux x86_64)
+# via npm
 npm install -g @adamlangepl/tc-proxy
 tinyclaude
 
