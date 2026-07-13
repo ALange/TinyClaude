@@ -30,8 +30,7 @@ import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
 
 // Store update command globally
-let updateCommand: string =
-	"npm install -g @adamlangepl/tc-proxy@latest";
+let updateCommand: string = "npm install -g @adamlangepl/tc-proxy@latest";
 let detectedPackageManager: "npm" | "bun" | "unknown" = "npm";
 let isBinaryInstallation: boolean = false;
 let isDockerInstallation: boolean = false;
