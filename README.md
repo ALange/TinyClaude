@@ -51,6 +51,14 @@ See [Getting Started](docs/index.md) for Docker, systemd, SSL/HTTPS, and Codex C
 
 Full docs in [`docs/`](docs/) — [Getting Started](docs/index.md), [CLI Commands](docs/cli.md), [Architecture](docs/architecture.md), [Configuration](docs/configuration.md), [Load Balancing](docs/load-balancing.md), [Combos](docs/combos.md), [Troubleshooting](docs/troubleshooting.md).
 
+## Acknowledgements
+
+This project builds on ideas and code from:
+
+- [tombii/better-ccflare](https://github.com/tombii/better-ccflare)
+- [snipeship/ccflare](https://github.com/snipeship/ccflare)
+- [headroomlabs-ai/headroom](https://github.com/headroomlabs-ai/headroom)
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
