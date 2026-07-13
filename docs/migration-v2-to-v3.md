@@ -98,15 +98,15 @@ cp ~/.config/tinyclaude/tinyclaude.db ~/.config/tinyclaude/tinyclaude.db.backup
 
 ```bash
 # Using npm
-npm update tinyclaude
+npm update @adamlangepl/alpl-tinyclaude
 
 # Using bun
-bun update tinyclaude
+bun update @adamlangepl/alpl-tinyclaude
 
 # Or install fresh
-npm install -g tinyclaude@latest
+npm install -g @adamlangepl/alpl-tinyclaude@latest
 # or
-bun install -g tinyclaude@latest
+bun install -g @adamlangepl/alpl-tinyclaude@latest
 ```
 
 ### 3. Start the Application

@@ -143,7 +143,7 @@ After the automated pipeline completes, users can install tinyclaude in multiple
 
 ### 1. NPM (Recommended)
 ```bash
-npm install -g tinyclaude
+npm install -g @adamlangepl/alpl-tinyclaude
 ```
 
 ### 2. Direct Binary Download

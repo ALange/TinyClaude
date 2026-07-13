@@ -30,7 +30,8 @@ import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
 
 // Store update command globally
-let updateCommand: string = "npm install -g tinyclaude@latest";
+let updateCommand: string =
+	"npm install -g @adamlangepl/alpl-tinyclaude@latest";
 let detectedPackageManager: "npm" | "bun" | "unknown" = "npm";
 let isBinaryInstallation: boolean = false;
 let isDockerInstallation: boolean = false;
@@ -186,9 +187,9 @@ export function Navigation({
 
 		switch (packageManager) {
 			case "bun":
-				return "bun install -g tinyclaude@latest";
+				return "bun install -g @adamlangepl/alpl-tinyclaude@latest";
 			default:
-				return "npm install -g tinyclaude@latest";
+				return "npm install -g @adamlangepl/alpl-tinyclaude@latest";
 		}
 	};
 
