@@ -536,4 +536,87 @@ describe("OpenAICompatibleProvider", () => {
 			expect(body.model).toBe("custom/haiku-model");
 		});
 	});
+
+	// Regression test for a race condition where `currentEndpoint`/
+	// `currentModel` used to be mutable instance fields on this
+	// process-wide singleton provider, read/written across the
+	// `await request.json()` yield point in transformRequestBody. A
+	// concurrent request to the same provider instance could overwrite
+	// those fields mid-flight, causing the wrong request to get (or miss)
+	// DashScope-specific injections like `enable_thinking`/`cache_control`.
+	describe("concurrent requests to the same provider instance", () => {
+		it("does not leak endpoint/model state between an in-flight request and one that runs during its await", async () => {
+			const provider = new OpenAICompatibleProvider();
+
+			const dashScopeAccount: Account = {
+				...mockAccount,
+				custom_endpoint: JSON.stringify({
+					endpoint: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+				}),
+			};
+			const plainAccount: Account = {
+				...mockAccount,
+				custom_endpoint: "https://api.plain-provider.com/v1",
+			};
+
+			let releaseQwen!: () => void;
+			const qwenGate = new Promise<void>((resolve) => {
+				releaseQwen = resolve;
+			});
+
+			const qwenBody = {
+				model: "qwen-plus",
+				max_tokens: 100,
+				messages: [{ role: "user", content: "hi" }],
+			};
+			const plainBody = {
+				model: "gpt-4o-mini",
+				max_tokens: 100,
+				messages: [{ role: "user", content: "hi" }],
+			};
+
+			// Fake Request whose .json() suspends until released, standing in
+			// for the real yield point at `await request.json()`.
+			const qwenRequest = {
+				url: "https://proxy.local/v1/messages",
+				headers: new Headers({ "content-type": "application/json" }),
+				json: async () => {
+					await qwenGate;
+					return qwenBody;
+				},
+			} as unknown as Request;
+			const plainRequest = {
+				url: "https://proxy.local/v1/messages",
+				headers: new Headers({ "content-type": "application/json" }),
+				json: async () => plainBody,
+			} as unknown as Request;
+
+			// Start the DashScope/Qwen request; it suspends inside
+			// transformRequestBody at `await request.json()`.
+			const qwenPromise = provider.transformRequestBody(
+				qwenRequest,
+				dashScopeAccount,
+			);
+
+			// While it's suspended, a completely unrelated request runs to
+			// completion on the same provider instance. Pre-fix, this would
+			// clobber the shared currentEndpoint/currentModel fields.
+			provider.buildUrl("/v1/messages", "", plainAccount);
+			const plainTransformed = await provider.transformRequestBody(
+				plainRequest,
+				plainAccount,
+			);
+			const plainResultBody = await plainTransformed.json();
+
+			// Now let the DashScope/Qwen request resume and finish.
+			releaseQwen();
+			const qwenTransformed = await qwenPromise;
+			const qwenResultBody = await qwenTransformed.json();
+
+			// The Qwen request must see its own endpoint/model, not the
+			// interleaved plain request's.
+			expect(qwenResultBody.enable_thinking).toBe(true);
+			expect(plainResultBody.enable_thinking).toBeUndefined();
+		});
+	});
 });

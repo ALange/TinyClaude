@@ -20,8 +20,10 @@ export type { MaskSpan } from "./structure-mask";
 export {
 	CompressionCache,
 	extractToolResultContent,
+	extractToolResultContents,
 	isToolResultMessage,
 	swapToolResultContent,
+	swapToolResultContentAt,
 } from "./cache";
 
 // ── Sub-Compressors ──────────────────────────────────────────────────────────

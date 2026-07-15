@@ -66,6 +66,66 @@ export function extractToolResultContent(
 }
 
 /**
+ * Extract text content from every tool_result block in a message (both
+ * formats). Unlike `extractToolResultContent`, this does not stop at the
+ * first match — a single Anthropic user message can carry multiple
+ * tool_result blocks at once (e.g. the results of several parallel tool
+ * calls), and each needs its own hash/cache lookup.
+ */
+export function extractToolResultContents(
+	msg: Record<string, unknown>,
+): Array<{ blockIndex: number; content: string }> {
+	if (msg.role === "tool") {
+		const content = msg.content;
+		return typeof content === "string" ?
+				[{ blockIndex: -1, content }]
+			:	[];
+	}
+	const content = msg.content;
+	const results: Array<{ blockIndex: number; content: string }> = [];
+	if (Array.isArray(content)) {
+		content.forEach((block, blockIndex) => {
+			if (
+				typeof block === "object" &&
+				block !== null &&
+				(block as Record<string, unknown>).type === "tool_result"
+			) {
+				const inner = (block as Record<string, unknown>).content;
+				if (typeof inner === "string") {
+					results.push({ blockIndex, content: inner });
+				}
+			}
+		});
+	}
+	return results;
+}
+
+/**
+ * Deep-copy a message and replace the content of the tool_result block at
+ * `blockIndex` (as returned by `extractToolResultContents`; -1 means the
+ * OpenAI `role: "tool"` string-content form).
+ */
+export function swapToolResultContentAt(
+	msg: Record<string, unknown>,
+	blockIndex: number,
+	newContent: string,
+): Record<string, unknown> {
+	const newMsg = structuredClone(msg);
+	if (newMsg.role === "tool") {
+		newMsg.content = newContent;
+		return newMsg;
+	}
+	const content = newMsg.content;
+	if (Array.isArray(content) && blockIndex >= 0 && blockIndex < content.length) {
+		const block = content[blockIndex];
+		if (typeof block === "object" && block !== null) {
+			(block as Record<string, unknown>).content = newContent;
+		}
+	}
+	return newMsg;
+}
+
+/**
  * Deep-copy a message and replace its tool-result content.
  */
 export function swapToolResultContent(

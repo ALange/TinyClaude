@@ -2,9 +2,9 @@ import {
 	CompressionCache,
 	computeAlignmentScore,
 	detectVolatileContent,
-	extractToolResultContent,
+	extractToolResultContents,
 	isToolResultMessage,
-	swapToolResultContent,
+	swapToolResultContentAt,
 } from "@tinyclaude/providers";
 import type { RequestBodyContext } from "../request-body-context";
 import type { ProxyContext } from "./proxy-types";
@@ -83,64 +83,73 @@ export function applyCompressionAndAlignment(
 	let mutated = false;
 
 	for (let i = 0; i < typedMessages.length - 1; i++) {
-		const msg = typedMessages[i];
+		let msg = typedMessages[i];
 		if (!isToolResultMessage(msg)) continue;
-		const content = extractToolResultContent(msg);
-		if (content === null) continue;
+		// A single message can carry multiple tool_result blocks (e.g. the
+		// results of several parallel tool calls) — compress each one, not
+		// just the first.
+		const blocks = extractToolResultContents(msg);
 
-		const hash = CompressionCache.contentHash(content);
-		const cached = ctx.compressionCache.getCompressed(hash, content.length);
-		const timestamp = Date.now();
+		for (const { blockIndex, content } of blocks) {
+			const hash = CompressionCache.contentHash(content);
+			const cached = ctx.compressionCache.getCompressed(hash, content.length);
+			const timestamp = Date.now();
 
-		if (cached !== null) {
-			if (cached !== content) {
-				newMessages[i] = swapToolResultContent(msg, cached);
+			if (cached !== null) {
+				if (cached !== content) {
+					msg = swapToolResultContentAt(msg, blockIndex, cached);
+					mutated = true;
+				}
+				events.push({
+					id: crypto.randomUUID(),
+					contentType: null,
+					compressorUsed: "cache_hit",
+					strategy: null,
+					compressionRatio:
+						content.length > 0 ? cached.length / content.length : null,
+					tokensBefore: Math.ceil(content.length / 4),
+					tokensAfter: Math.ceil(cached.length / 4),
+					charsBefore: content.length,
+					charsAfter: cached.length,
+					cacheHit: true,
+					timestamp,
+				});
+				continue;
+			}
+
+			const result = ctx.contentRouter.compress(content);
+			const tokensSaved = Math.max(
+				0,
+				result.tokensBefore - result.tokensAfter,
+			);
+			ctx.compressionCache.storeCompressed(
+				hash,
+				result.compressed,
+				tokensSaved,
+				content.length,
+			);
+
+			if (result.compressed !== content) {
+				msg = swapToolResultContentAt(msg, blockIndex, result.compressed);
 				mutated = true;
 			}
+
 			events.push({
 				id: crypto.randomUUID(),
-				contentType: null,
-				compressorUsed: "cache_hit",
-				strategy: null,
-				compressionRatio:
-					content.length > 0 ? cached.length / content.length : null,
-				tokensBefore: Math.ceil(content.length / 4),
-				tokensAfter: Math.ceil(cached.length / 4),
+				contentType: result.contentType,
+				compressorUsed: result.compressorUsed,
+				strategy: result.strategy,
+				compressionRatio: result.compressionRatio,
+				tokensBefore: result.tokensBefore,
+				tokensAfter: result.tokensAfter,
 				charsBefore: content.length,
-				charsAfter: cached.length,
-				cacheHit: true,
+				charsAfter: result.compressed.length,
+				cacheHit: false,
 				timestamp,
 			});
-			continue;
 		}
 
-		const result = ctx.contentRouter.compress(content);
-		const tokensSaved = Math.max(0, result.tokensBefore - result.tokensAfter);
-		ctx.compressionCache.storeCompressed(
-			hash,
-			result.compressed,
-			tokensSaved,
-			content.length,
-		);
-
-		if (result.compressed !== content) {
-			newMessages[i] = swapToolResultContent(msg, result.compressed);
-			mutated = true;
-		}
-
-		events.push({
-			id: crypto.randomUUID(),
-			contentType: result.contentType,
-			compressorUsed: result.compressorUsed,
-			strategy: result.strategy,
-			compressionRatio: result.compressionRatio,
-			tokensBefore: result.tokensBefore,
-			tokensAfter: result.tokensAfter,
-			charsBefore: content.length,
-			charsAfter: result.compressed.length,
-			cacheHit: false,
-			timestamp,
-		});
+		newMessages[i] = msg;
 	}
 
 	if (mutated) {

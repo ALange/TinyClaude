@@ -62,10 +62,10 @@ function makeCtx(
 }
 
 /** A large-enough JSON blob that ContentRouter will actually compress. */
-function makeCompressibleToolResult(): string {
+function makeCompressibleToolResult(seed = 0): string {
 	const obj = {
 		items: Array.from({ length: 20 }, (_, i) => ({
-			id: i,
+			id: i + seed,
 			name: `item-${i}`,
 			description: "a".repeat(50),
 		})),
@@ -327,6 +327,97 @@ describe("applyCompressionAndAlignment — compress_context enabled, non-trailin
 		expect(events[0]?.cacheHit).toBe(false);
 
 		expect(compressionCache.getCompressed(hash)).not.toBeNull();
+		expect(result.alignmentScore).toBe(100);
+	});
+});
+
+// ── compress_context on, multiple tool_result blocks in one message ───────────
+
+describe("applyCompressionAndAlignment — multiple tool_result blocks in a single message", () => {
+	/**
+	 * Regression test: when Claude issues parallel tool calls, Anthropic packs
+	 * every resulting tool_result into a SINGLE user message's content array.
+	 * The old extractToolResultContent/swapToolResultContent helpers only ever
+	 * acted on the first tool_result block found in a message, silently
+	 * leaving every other block in that same message uncompressed forever.
+	 * All blocks in the message must now be compressed independently.
+	 */
+	it("compresses every tool_result block in the message, not just the first", () => {
+		const compressionCache = new CompressionCache();
+		const contentRouter = new ContentRouter();
+		const saveCompressionEvents = mock(
+			async (_requestId: string, _events: unknown[]) => {},
+		);
+		const ctx = makeCtx({
+			compressContext: true,
+			compressionCache,
+			contentRouter,
+			saveCompressionEvents,
+		});
+
+		const firstContent = makeCompressibleToolResult(0);
+		const secondContent = makeCompressibleToolResult(1000);
+		const firstHash = CompressionCache.contentHash(firstContent);
+		const secondHash = CompressionCache.contentHash(secondContent);
+
+		const compressSpy = spyOn(contentRouter, "compress");
+
+		const messages = [
+			{ role: "user", content: "please read both config files" },
+			{
+				role: "assistant",
+				content: [
+					{ type: "tool_use", id: "call-1", name: "read_file", input: {} },
+					{ type: "tool_use", id: "call-2", name: "read_file", input: {} },
+				],
+			},
+			{
+				role: "user",
+				content: [
+					{
+						type: "tool_result",
+						tool_use_id: "call-1",
+						content: firstContent,
+					},
+					{
+						type: "tool_result",
+						tool_use_id: "call-2",
+						content: secondContent,
+					},
+				],
+			},
+			{ role: "assistant", content: "here is both files' content" },
+			{ role: "user", content: "thanks, what should I do next?" },
+		];
+		const rbc = makeRequestBodyContext({ messages });
+
+		const result = applyCompressionAndAlignment(rbc, ctx, "req-parallel");
+
+		expect(compressSpy).toHaveBeenCalledTimes(2);
+		expect(compressSpy).toHaveBeenCalledWith(firstContent);
+		expect(compressSpy).toHaveBeenCalledWith(secondContent);
+
+		expect(rbc.isDirty).toBe(true);
+		const buffer = rbc.getBuffer();
+		expect(buffer).not.toBeNull();
+		const decoded = JSON.parse(new TextDecoder().decode(buffer as ArrayBuffer));
+		const [firstBlock, secondBlock] = decoded.messages[2].content;
+
+		expect(firstBlock.content).not.toBe(firstContent);
+		expect(firstBlock.content.length).toBeLessThan(firstContent.length);
+		expect(secondBlock.content).not.toBe(secondContent);
+		expect(secondBlock.content.length).toBeLessThan(secondContent.length);
+
+		expect(saveCompressionEvents).toHaveBeenCalledTimes(1);
+		const [, events] = saveCompressionEvents.mock.calls[0] as [
+			string,
+			Array<Record<string, unknown>>,
+		];
+		expect(events).toHaveLength(2);
+		expect(events.every((e) => e.cacheHit === false)).toBe(true);
+
+		expect(compressionCache.getCompressed(firstHash)).not.toBeNull();
+		expect(compressionCache.getCompressed(secondHash)).not.toBeNull();
 		expect(result.alignmentScore).toBe(100);
 	});
 });
