@@ -52,6 +52,7 @@ export {
 	ContentType,
 	extractToolResultContent,
 	isToolResultMessage,
+	swapToolResultContent,
 	detectBatch,
 	detectContentType,
 	JSONCompressor,
