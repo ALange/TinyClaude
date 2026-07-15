@@ -50,6 +50,8 @@ export {
 	CompressionCache,
 	ContentRouter,
 	ContentType,
+	extractToolResultContent,
+	isToolResultMessage,
 	detectBatch,
 	detectContentType,
 	JSONCompressor,

@@ -23,7 +23,7 @@ interface CacheEntry {
 /**
  * Check if a message is a tool-result message (Anthropic or OpenAI format).
  */
-function _isToolResultMessage(msg: Record<string, unknown>): boolean {
+export function isToolResultMessage(msg: Record<string, unknown>): boolean {
 	if (msg.role === "tool") return true;
 	const content = msg.content;
 	if (Array.isArray(content)) {
@@ -40,7 +40,7 @@ function _isToolResultMessage(msg: Record<string, unknown>): boolean {
 /**
  * Extract text content from a tool-result message (both formats).
  */
-function _extractToolResultContent(
+export function extractToolResultContent(
 	msg: Record<string, unknown>,
 ): string | null {
 	// OpenAI format: role="tool", content is string
@@ -68,7 +68,7 @@ function _extractToolResultContent(
 /**
  * Deep-copy a message and replace its tool-result content.
  */
-function _swapToolResultContent(
+export function swapToolResultContent(
 	msg: Record<string, unknown>,
 	newContent: string,
 ): Record<string, unknown> {
@@ -221,8 +221,8 @@ export class CompressionCache {
 		upTo: number,
 	): void {
 		for (const msg of messages.slice(0, upTo)) {
-			if (_isToolResultMessage(msg)) {
-				const content = _extractToolResultContent(msg);
+			if (isToolResultMessage(msg)) {
+				const content = extractToolResultContent(msg);
 				if (content !== null) {
 					this._stableHashes.add(_contentHash(content));
 				}
@@ -289,8 +289,8 @@ export class CompressionCache {
 	computeFrozenCount(messages: Array<Record<string, unknown>>): number {
 		let count = 0;
 		for (const msg of messages) {
-			if (_isToolResultMessage(msg)) {
-				const content = _extractToolResultContent(msg);
+			if (isToolResultMessage(msg)) {
+				const content = extractToolResultContent(msg);
 				if (content !== null) {
 					const h = _contentHash(content);
 					if (!this._cache.has(h) && !this._stableHashes.has(h)) {
@@ -315,13 +315,13 @@ export class CompressionCache {
 	): Array<Record<string, unknown>> {
 		const result: Array<Record<string, unknown>> = [];
 		for (const msg of messages) {
-			if (_isToolResultMessage(msg)) {
-				const content = _extractToolResultContent(msg);
+			if (isToolResultMessage(msg)) {
+				const content = extractToolResultContent(msg);
 				if (content !== null) {
 					const h = _contentHash(content);
 					const compressed = this.getCompressed(h, content.length);
 					if (compressed !== null) {
-						result.push(_swapToolResultContent(msg, compressed));
+						result.push(swapToolResultContent(msg, compressed));
 						continue;
 					}
 				}
@@ -347,8 +347,8 @@ export class CompressionCache {
 			return;
 		}
 		for (let i = 0; i < originals.length; i++) {
-			const origContent = _extractToolResultContent(originals[i]);
-			const compContent = _extractToolResultContent(compressed[i]);
+			const origContent = extractToolResultContent(originals[i]);
+			const compContent = extractToolResultContent(compressed[i]);
 			if (origContent === null || compContent === null) continue;
 			if (origContent === compContent) {
 				// Content unchanged — mark as stable

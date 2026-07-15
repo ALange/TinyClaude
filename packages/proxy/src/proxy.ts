@@ -250,9 +250,23 @@ export async function handleProxy(
 	requestMeta.originalModel = originalModel;
 	requestMeta.appliedModel = appliedModel;
 
-	// Always score cache alignment; compress tool_result blocks if enabled
+	// Always score cache alignment; compress tool_result blocks if enabled.
+	// Skip compression on synthetic replays (keepalive / auto-refresh) —
+	// the cached body already contains compressed content, and re-compressing
+	// it would produce double-compressed content upstream, defeating cache
+	// warming. Still run alignment scoring for analytics completeness.
+	const isKeepalive =
+		req.headers.get("x-tinyclaude-keepalive") === "true";
+	const isAutoRefresh =
+		req.headers.get("x-tinyclaude-auto-refresh") === "true";
 	const { alignmentScore, volatileFindingsCount } =
-		applyCompressionAndAlignment(requestBodyContext, ctx, requestMeta.id);
+		!isKeepalive && !isAutoRefresh
+			? applyCompressionAndAlignment(
+					requestBodyContext,
+					ctx,
+					requestMeta.id,
+				)
+			: { alignmentScore: null, volatileFindingsCount: null };
 	requestMeta.alignmentScore = alignmentScore;
 	requestMeta.volatileFindingsCount = volatileFindingsCount;
 

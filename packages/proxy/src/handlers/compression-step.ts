@@ -2,6 +2,9 @@ import {
 	CompressionCache,
 	computeAlignmentScore,
 	detectVolatileContent,
+	extractToolResultContent,
+	isToolResultMessage,
+	swapToolResultContent,
 } from "@tinyclaude/providers";
 import type { RequestBodyContext } from "../request-body-context";
 import type { ProxyContext } from "./proxy-types";
@@ -23,71 +26,6 @@ interface CompressionEventInput {
 	charsAfter: number | null;
 	cacheHit: boolean;
 	timestamp: number;
-}
-
-/**
- * Tool-result detection/extraction/swap mirrors CompressionCache's private
- * helpers (cache.ts) — those are not exported, so this proxy-layer step
- * implements its own copy for the message shapes it needs to mutate.
- */
-function isToolResultMessage(msg: Record<string, unknown>): boolean {
-	if (msg.role === "tool") return true;
-	const content = msg.content;
-	if (Array.isArray(content)) {
-		return content.some(
-			(block: unknown) =>
-				typeof block === "object" &&
-				block !== null &&
-				(block as Record<string, unknown>).type === "tool_result",
-		);
-	}
-	return false;
-}
-
-function extractToolResultContent(msg: Record<string, unknown>): string | null {
-	if (msg.role === "tool") {
-		const content = msg.content;
-		return typeof content === "string" ? content : null;
-	}
-	const content = msg.content;
-	if (Array.isArray(content)) {
-		for (const block of content) {
-			if (
-				typeof block === "object" &&
-				block !== null &&
-				(block as Record<string, unknown>).type === "tool_result"
-			) {
-				const inner = (block as Record<string, unknown>).content;
-				return typeof inner === "string" ? inner : null;
-			}
-		}
-	}
-	return null;
-}
-
-function swapToolResultContent(
-	msg: Record<string, unknown>,
-	newContent: string,
-): Record<string, unknown> {
-	const newMsg = structuredClone(msg);
-	if (newMsg.role === "tool") {
-		newMsg.content = newContent;
-		return newMsg;
-	}
-	const content = newMsg.content;
-	if (Array.isArray(content)) {
-		for (const block of content) {
-			if (
-				typeof block === "object" &&
-				block !== null &&
-				(block as Record<string, unknown>).type === "tool_result"
-			) {
-				(block as Record<string, unknown>).content = newContent;
-				break;
-			}
-		}
-	}
-	return newMsg;
 }
 
 /**

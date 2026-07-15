@@ -61,9 +61,82 @@ function containsBytes(haystack: Uint8Array, needle: Uint8Array): boolean {
 	return false;
 }
 
+/** Check if an object value is a cache_control block with type === "ephemeral". */
+function isCacheControlBlock(value: unknown): boolean {
+	if (typeof value !== "object" || value === null) return false;
+	const record = value as Record<string, unknown>;
+	const cc = record.cache_control;
+	const ccHyphen = record["cache-control"];
+	return (
+		(typeof cc === "object" &&
+			cc !== null &&
+			(cc as Record<string, unknown>).type === "ephemeral") ||
+		(typeof ccHyphen === "object" &&
+			ccHyphen !== null &&
+			(ccHyphen as Record<string, unknown>).type === "ephemeral")
+	);
+}
+
+/** Check for cache_control in an array of content blocks. */
+function arrayHasCacheControl(arr: unknown[]): boolean {
+	return arr.some(
+		(block: unknown) =>
+			typeof block === "object" &&
+			block !== null &&
+			isCacheControlBlock(block),
+	);
+}
+
+/** Recursively check messages[].content[] blocks for cache_control markers. */
+function messagesHaveCacheControl(messages: unknown[]): boolean {
+	for (const msg of messages) {
+		if (typeof msg !== "object" || msg === null) continue;
+		const content = (msg as Record<string, unknown>).content;
+		if (Array.isArray(content) && arrayHasCacheControl(content)) return true;
+	}
+	return false;
+}
+
 function hasCacheControlHint(body: ArrayBuffer): boolean {
 	const bytes = new Uint8Array(body);
-	return CACHE_CONTROL_HINTS.some((hint) => containsBytes(bytes, hint));
+
+	// Fast path: byte-level scan as cheap filter. Returns quickly for the
+	// vast majority of request bodies that don't mention cache_control at all.
+	if (
+		!CACHE_CONTROL_HINTS.some((hint) => containsBytes(bytes, hint))
+	) {
+		return false;
+	}
+
+	// Structural verification: parse JSON and confirm cache_control appears
+	// as an object key at valid locations — not as arbitrary string content
+	// (filenames, code, variable names, etc.).
+	//
+	// Valid locations for cache_control in the Anthropic Messages API:
+	//   - system[N].cache_control
+	//   - messages[N].content[N].cache_control
+	//   - top-level (some providers use this form)
+	// Both snake_case and hyphenated forms are checked.
+	try {
+		const parsed = JSON.parse(new TextDecoder().decode(body));
+		if (typeof parsed !== "object" || parsed === null) return false;
+		const root = parsed as Record<string, unknown>;
+
+		// Check top-level cache_control / cache-control
+		if (isCacheControlBlock(root)) return true;
+
+		// Check system array elements
+		const system = root.system;
+		if (Array.isArray(system) && arrayHasCacheControl(system)) return true;
+
+		// Check messages[].content[] elements
+		const messages = root.messages;
+		if (Array.isArray(messages) && messagesHaveCacheControl(messages)) return true;
+
+		return false;
+	} catch {
+		return false;
+	}
 }
 
 export interface CachedRequestEntry {

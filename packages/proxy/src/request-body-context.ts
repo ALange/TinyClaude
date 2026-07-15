@@ -136,7 +136,7 @@ export class RequestBodyContext {
 		if (!body) return null;
 
 		return RequestBodyContext.fromParsed(this.getBuffer(), {
-			...body,
+			...structuredClone(body),
 			model,
 		});
 	}

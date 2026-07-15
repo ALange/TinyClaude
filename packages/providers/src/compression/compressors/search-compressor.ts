@@ -38,6 +38,21 @@ export interface SearchCompressionResult {
 /** Match a typical grep/ripgrep output line: "file:line:content" or "file:line:col:content". */
 const GREP_LINE = /^(\S+?):(\d+)(?::(\d+))?:(.*)$/;
 
+/** Common file extensions that appear in grep/ripgrep results. */
+const COMMON_FILE_EXT = /\.(?:ts|js|tsx|jsx|mjs|cjs|mts|cts|py|rb|go|rs|java|kt|swift|c|cpp|h|hpp|cs|json|yaml|yml|toml|xml|html|css|scss|md|txt|log|sh|bash|sql|proto|gradle|dart|lua|php|r|scala|zig|nim|ex|exs)$/i;
+
+/** Maximum plausible line number for grep results. */
+const MAX_LINE_NUMBER = 100_000;
+
+/** Validate a GREP_LINE match looks like a real grep/ripgrep result (not a URL, timestamp, etc.). */
+function isPlausibleGrepMatch(m: RegExpExecArray): boolean {
+	const lineNum = parseInt(m[2], 10);
+	if (isNaN(lineNum) || lineNum < 1 || lineNum > MAX_LINE_NUMBER) return false;
+	const path = m[1];
+	// Accept file paths with directory separators or known file extensions
+	return path.includes("/") || COMMON_FILE_EXT.test(path);
+}
+
 /** Match a file header like "path/to/file:" or "── file ──". */
 const FILE_HEADER = /^──\s(.+)\s──$/;
 
@@ -67,7 +82,7 @@ export class SearchCompressor {
 				continue;
 			}
 			const grepMatch = GREP_LINE.exec(line);
-			if (grepMatch) {
+			if (grepMatch && isPlausibleGrepMatch(grepMatch)) {
 				currentFile = grepMatch[1];
 			}
 			if (!files.has(currentFile)) {
@@ -77,7 +92,10 @@ export class SearchCompressor {
 		}
 
 		const totalFiles = files.size;
-		const totalMatches = lines.filter((l) => GREP_LINE.test(l)).length;
+		const totalMatches = lines.filter((l) => {
+	const m = GREP_LINE.exec(l);
+	return m !== null && isPlausibleGrepMatch(m);
+}).length;
 
 		// Truncate lines per file
 		for (const [file, fileLines] of files) {
@@ -119,7 +137,7 @@ export class SearchCompressor {
 			}
 			for (const line of fileLines) {
 				const grepMatch = GREP_LINE.exec(line);
-				if (grepMatch) {
+				if (grepMatch && isPlausibleGrepMatch(grepMatch)) {
 					const snippet = grepMatch[4];
 					if (snippet.length > this.config.maxSnippetChars) {
 						compressedMatches++;

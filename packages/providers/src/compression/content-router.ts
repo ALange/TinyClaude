@@ -354,7 +354,7 @@ export class ContentRouter {
 		};
 	}
 
-	/** Split content on markdown code fences. */
+	/** Split content on markdown code fences, falling back to paragraph breaks. */
 	private _splitIntoSections(content: string): string[] {
 		const sections: string[] = [];
 		const lines = content.split("\n");
@@ -376,6 +376,30 @@ export class ContentRouter {
 
 		if (current.length > 0) {
 			sections.push(current.join("\n"));
+		}
+
+		// If fence splitting didn't actually split anything, try paragraph breaks.
+		// This handles mixed content where no code fences exist (e.g., JSON blocks
+		// and search results), giving each section a fair shot at its own compressor.
+		if (sections.length <= 1) {
+			const paraSections: string[] = [];
+			let para: string[] = [];
+			for (const line of lines) {
+				if (line.trim() === "") {
+					if (para.length > 0) {
+						paraSections.push(para.join("\n"));
+						para = [];
+					}
+				} else {
+					para.push(line);
+				}
+			}
+			if (para.length > 0) {
+				paraSections.push(para.join("\n"));
+			}
+			if (paraSections.length > 1) {
+				return paraSections;
+			}
 		}
 
 		return sections;

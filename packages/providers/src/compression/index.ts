@@ -17,7 +17,12 @@ export {
 export type { MaskSpan } from "./structure-mask";
 
 // ── Compression Cache ────────────────────────────────────────────────────────
-export { CompressionCache } from "./cache";
+export {
+	CompressionCache,
+	extractToolResultContent,
+	isToolResultMessage,
+	swapToolResultContent,
+} from "./cache";
 
 // ── Sub-Compressors ──────────────────────────────────────────────────────────
 export { JSONCompressor } from "./compressors/json-compressor";
