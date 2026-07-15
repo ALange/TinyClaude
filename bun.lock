@@ -13,7 +13,7 @@
     },
     "apps/cli": {
       "name": "@adamlangepl/tc-proxy",
-      "version": "1.0.2",
+      "version": "1.0.5",
       "bin": {
         "tinyclaude": "bin/tinyclaude.js",
       },
