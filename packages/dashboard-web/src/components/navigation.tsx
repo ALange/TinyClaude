@@ -396,7 +396,7 @@ export function Navigation({
 									tinyclaude
 								</h1>
 								<p className="text-xs text-muted-foreground">
-									Powerful proxy for Claude Code
+									Powerfull Claude Code cache/compressor Proxy
 								</p>
 							</div>
 						</div>
