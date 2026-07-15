@@ -2,6 +2,7 @@ import { parseHttpError } from "@tinyclaude/errors";
 import {
 	Activity,
 	BarChart3,
+	BookOpen,
 	Bot,
 	FileText,
 	GitBranch,
@@ -104,6 +105,7 @@ export function Navigation({
 			{ label: "API Keys", icon: Key, path: "/api-keys" },
 			{ label: "Logs", icon: FileText, path: "/logs" },
 			{ label: "Settings", icon: Settings, path: "/settings" },
+			{ label: "Wiki", icon: BookOpen, path: "/wiki" },
 		);
 
 		return baseItems;

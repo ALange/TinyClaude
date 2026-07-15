@@ -19,6 +19,7 @@ import { Navigation } from "./components/navigation";
 import { OverviewTab } from "./components/OverviewTab";
 import { RequestsTab } from "./components/RequestsTab";
 import { SettingsTab } from "./components/SettingsTab";
+import { WikiTab } from "./components/WikiTab";
 import { QUERY_CONFIG, REFRESH_INTERVALS } from "./constants";
 import { ThemeProvider } from "./contexts/theme-context";
 import "./index.css";
@@ -156,6 +157,12 @@ export function App() {
 				element: <SettingsTab />,
 				title: "Settings",
 				subtitle: "Configure system behavior and data retention",
+			},
+			{
+				path: "/wiki",
+				element: <WikiTab />,
+				title: "TinyClaude Wiki",
+				subtitle: "How compression and caching work, at a glance",
 			},
 		];
 
